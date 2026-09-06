@@ -2,6 +2,15 @@ export default defineNuxtConfig({
   compatibilityDate: '2025-01-01',
   devtools: { enabled: false },
   css: ['~/assets/css/main.css'],
+  nitro: {
+    prerender: {
+      // The service/about/contact routes aren't rebuilt yet, so don't let the
+      // crawler chase those nav links and fail the build on their 404s.
+      crawlLinks: false,
+      failOnError: false,
+      routes: ['/']
+    }
+  },
   app: {
     head: {
       htmlAttrs: { lang: 'en' },
