@@ -1,0 +1,146 @@
+:root {
+  --bg: #0e0f13;
+  --panel: #171922;
+  --panel-2: #1e2130;
+  --line: #2a2e3f;
+  --text: #eceef5;
+  --muted: #9aa1b8;
+  --accent: #6c8cff;
+  --ok: #35c48a;
+  --err: #ff6b6b;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  line-height: 1.55;
+}
+
+.wrap {
+  max-width: 940px;
+  margin: 0 auto;
+  padding: 32px 20px 80px;
+}
+
+h1 { font-size: 26px; margin: 0 0 4px; letter-spacing: -0.02em; }
+.sub { color: var(--muted); margin: 0 0 28px; font-size: 15px; }
+
+.card {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  padding: 20px;
+  margin-bottom: 18px;
+}
+
+.step-title {
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 14px;
+}
+
+.drop {
+  border: 2px dashed var(--line);
+  border-radius: 12px;
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color .15s, background .15s;
+  background: var(--panel-2);
+}
+.drop:hover, .drop.over { border-color: var(--accent); background: #202437; }
+.drop p { margin: 6px 0 0; color: var(--muted); font-size: 14px; }
+.drop strong { font-size: 15px; }
+
+.preview { display: flex; gap: 16px; align-items: center; }
+.preview img {
+  width: 140px; height: 140px; object-fit: cover;
+  border-radius: 10px; border: 1px solid var(--line);
+}
+.preview .meta { font-size: 14px; color: var(--muted); }
+.preview .meta b { color: var(--text); display: block; margin-bottom: 4px; word-break: break-all; }
+
+textarea, select, input[type="text"] {
+  width: 100%;
+  background: var(--panel-2);
+  color: var(--text);
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 15px;
+  font-family: inherit;
+}
+textarea { min-height: 110px; resize: vertical; }
+textarea:focus, select:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(190px, 1fr));
+  gap: 14px;
+}
+label.field { display: block; }
+label.field span {
+  display: block; font-size: 13px; color: var(--muted); margin-bottom: 6px;
+}
+
+.check { display: flex; align-items: center; gap: 9px; font-size: 15px; margin-top: 4px; }
+.check input { width: 17px; height: 17px; accent-color: var(--accent); }
+
+button.primary {
+  width: 100%;
+  background: var(--accent);
+  color: #fff;
+  border: 0;
+  border-radius: 11px;
+  padding: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: inherit;
+}
+button.primary:hover:not(:disabled) { background: #5a7bf5; }
+button.primary:disabled { opacity: .5; cursor: not-allowed; }
+
+button.ghost {
+  background: transparent; color: var(--muted);
+  border: 1px solid var(--line); border-radius: 9px;
+  padding: 9px 14px; font-size: 14px; cursor: pointer; font-family: inherit;
+}
+button.ghost:hover { color: var(--text); border-color: var(--accent); }
+
+.hint { font-size: 13px; color: var(--muted); margin-top: 10px; }
+
+.banner {
+  border-radius: 12px; padding: 14px 16px; font-size: 14px;
+  margin-bottom: 18px; border: 1px solid;
+}
+.banner.warn { background: #2a2113; border-color: #6b5320; color: #f0d9a0; }
+.banner.err  { background: #2b1618; border-color: #6b2a2f; color: #ffb3b3; }
+.banner b { display: block; margin-bottom: 4px; }
+.banner code {
+  background: rgba(255,255,255,.08); padding: 1px 6px;
+  border-radius: 5px; font-size: 13px;
+}
+
+.status { display: flex; align-items: center; gap: 12px; font-size: 15px; }
+.spinner {
+  width: 20px; height: 20px; flex: none;
+  border: 2.5px solid var(--line); border-top-color: var(--accent);
+  border-radius: 50%; animation: spin .8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+video { width: 100%; border-radius: 12px; background: #000; display: block; }
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 14px; }
+a.dl {
+  background: var(--ok); color: #06281c; text-decoration: none;
+  padding: 11px 18px; border-radius: 9px; font-weight: 600; font-size: 15px;
+}
