@@ -10,8 +10,9 @@ Two design-related skills are installed, and they are not redundant — each has
 | `web-design-guidelines` | Correctness: accessibility, semantic HTML, keyboard/focus, forms, ARIA, `prefers-reduced-motion` | Reviewing/auditing UI code against best practices |
 | `scroll-motion-performance-accessibility` | Scroll/motion QA: input safety, frame budget, image-sequence/video/WebGL performance, mobile stability | Anything with scroll-driven animation, pinning, parallax, or WebGL tied to scroll |
 | `premium-3d-landing-page` | Structuring a real 3D landing page/hero (camera, lighting, materials, story) | Only when 3D is actually load-bearing to the page's concept |
+| `visual-direction` | Technical camera/lens/projection/lighting/material/render-style vocabulary for any image, video, or 3D-scene prompt | Writing or reviewing an image/video/3D-generation prompt, a hero visual spec, a product/architectural render, or a technical diagram — replaces vague adjectives ("premium", "cinematic") with a decidable spec |
 
-If `design-taste` and `web-design-guidelines` ever disagree: **art direction defers to design-taste, correctness/accessibility defers to web-design-guidelines.**
+If `design-taste` and `web-design-guidelines` ever disagree: **art direction defers to design-taste, correctness/accessibility defers to web-design-guidelines.** `visual-direction` sits underneath both — it's the vocabulary `design-taste` and `premium-3d-landing-page` reach for when a *visual/prompt* (not just layout/motion) decision needs to be made concrete.
 
 Don't activate every skill on every task. Route by size:
 - Simple task (copy tweak, one style fix) → 0–1 skill.
