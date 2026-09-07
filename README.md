@@ -22,11 +22,25 @@ dağıtılabilir.
 
 ## Geliştirme
 
+Node 20.9 veya üzeri gerekir (`node -v` ile kontrol edin).
+
 ```bash
+git clone https://github.com/berksenyuzdigital-glitch/vercel.git aurea
+cd aurea
+git checkout claude/dental-appointment-website-tp2aw7   # site bu dalda, main'de değil
 npm install
 npm run dev     # http://localhost:3000
 npm run build   # üretim derlemesi
 ```
+
+### Sorun giderme
+
+| Belirti | Sebep ve çözüm |
+| --- | --- |
+| `npm error enoent ... package.json` | Yanlış dal ya da yanlış klasördesiniz. Site `claude/dental-appointment-website-tp2aw7` dalında; `main` yalnızca README içerir. `git branch --show-current` ve `ls package.json` ile doğrulayın. |
+| `You are using Node.js 18.x. For Next.js, Node.js version >= v20.9.0 is required.` | Node sürümünüz eski. `nvm install 22 && nvm use 22` ya da nodejs.org'dan LTS kurun. |
+| `EADDRINUSE: address already in use :::3000` | 3000 portu dolu. `npm run dev -- -p 3001` ile başka porttan açın. |
+| Sayfa açılıyor ama stilsiz görünüyor | Eski bir `.next` klasörü kalmış olabilir: `rm -rf .next` (Windows: `rmdir /s /q .next`) sonra tekrar `npm run dev`. |
 
 ## Yapı
 
