@@ -125,17 +125,20 @@ Sistem uyarısı: {{1}} akışı hata verdi. Node: {{2}}. Hata: {{3}}
 Kullanan: Workflow 08 — her akşam 19:00, klinik sahibine/sekretere.
 
 ```
-{{1}} özeti: Yarın {{2}} randevu var ({{3}} onaylı, {{4}} onay bekliyor). Bugün {{5}} iptal oldu, {{6}} boş koltuk dolduruldu. Bekleme listesinde {{7}} kişi var.
+{{1}} özeti: Yarın {{2}} randevu var ({{3}} onaylı, {{4}} onay bekliyor). Bugün {{5}} hasta geldi, {{6}} gelmedi, {{7}} iptal oldu. {{8}} boş koltuk dolduruldu. Bekleme listesinde {{9}} kişi var.
 ```
-| Değişken | Örnek |
-|---|---|
-| {{1}} | 08.09.2026 |
-| {{2}} | 12 |
-| {{3}} | 9 |
-| {{4}} | 3 |
-| {{5}} | 2 |
-| {{6}} | 1 |
-| {{7}} | 14 |
+| Değişken | Örnek | |
+|---|---|---|
+| {{1}} | 08.09.2026 | tarih |
+| {{2}} | 12 | yarın toplam randevu |
+| {{3}} | 9 | yarın onaylı |
+| {{4}} | 3 | yarın onay bekleyen |
+| {{5}} | 10 | bugün gelen |
+| {{6}} | 2 | **bugün gelmeyen (no-show)** |
+| {{7}} | 1 | bugün iptal |
+| {{8}} | 1 | otomasyonun doldurduğu koltuk |
+| {{9}} | 14 | bekleme listesi |
 
 > Bu mesaj kliniğin her gün otomasyonun işini görmesini sağlıyor — abonelik yenilemesinde
-> en güçlü argüman bu. `Rapor` sekmesinde aynı veriler tarih tarih birikiyor.
+> en güçlü argüman bu. `Rapor` sekmesinde aynı veriler tarih tarih birikiyor; {{6}} kolonu
+> zamanla no-show oranının düştüğünü gösteren tek somut kanıt.

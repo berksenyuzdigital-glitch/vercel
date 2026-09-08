@@ -4,7 +4,7 @@ RND-ORNEK-1,Mehmet Yılmaz,905321112233,2026-09-09,11:00,yeni,instagram,,,,,,202
 BKL-ORNEK-2,Ayşe Demir,905331112233,,,bekleme,web,,,,,,2026-09-08 10:00
 
 # Sekme: Rapor (Workflow 08 her akşam bir satır ekler)
-Tarih,YarinToplam,YarinOnayli,YarinBekleyen,BugunIptal,DoldurulanKoltuk,BeklemeListesi
+Tarih,YarinToplam,YarinOnayli,YarinBekleyen,BugunGeldi,BugunGelmedi,BugunIptal,DoldurulanKoltuk,BeklemeListesi
 
 # Sekme: Hatalar (Workflow 07 hata olunca yazar)
 Zaman,Workflow,Node,Hata,Execution

@@ -41,8 +41,9 @@ tek bir config dosyası doldurup `kur.py` çalıştırıyorsun.
 
 Kurallar:
 - `Tarih` → `2026-09-09` (yyyy-aa-gg), `Saat` → `11:00`, `Telefon` → `905321112233`. Kolonları **düz metin** formatına al.
-- `Durum` değerleri: `yeni` · `onaylı` · `iptal` · `geldi` · `bekleme` · `teklif_edildi`
-- `geldi` işaretini sekreter koyar (Workflow 04 ve 08 buna bakıyor). Tek manuel iş bu.
+- `Durum` değerleri: `yeni` · `onaylı` · `iptal` · `geldi` · `gelmedi` · `bekleme` · `teklif_edildi`
+- `geldi` / `gelmedi` işaretini sekreter koyar (Workflow 04 ve 08 buna bakıyor). Tek manuel iş bu —
+  günlük kullanım için `KULLANIM.md`.
 - `ID` boş kalamaz; tüm güncellemeler bu kolondan eşleşiyor.
 
 ### 2. WhatsApp Cloud API
@@ -151,6 +152,7 @@ Satarken atlanmaması gerekenler:
 - 15 dakikalık cron 105–135 dk penceresine bakıyor; cron aralığını değiştirirsen pencereyi de değiştir
   (`03` içindeki `2 Saat Kalanları Seç`), yoksa ya çift mesaj ya atlama olur.
 - Her kliniğe **kendi Sheet'i + kendi WhatsApp numarası**. Aynı Sheet'te iki klinik tutma.
+- Günlük kullanım, sekreter kılavuzu ve sorun giderme: **`KULLANIM.md`**.
 - `Rapor` sekmesi 1 ay birikince kliniğe "no-show şu kadar düştü, şu kadar koltuk doldu" diye
   somut tablo gösterirsin — yenileme görüşmesinin dayanağı bu, tahmini rakamlar değil.
 - Metindeki pazar verileri (otomasyon kullanım oranı, no-show düşüşü) senin verdiğin rakamlar; doğrulamadım.
