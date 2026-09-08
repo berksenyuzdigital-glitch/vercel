@@ -87,3 +87,55 @@ Merhaba {{1}}, bizi tercih ettiğiniz için teşekkür ederiz. Memnun kaldıysan
 Hasta bize mesaj attığı anda 24 saatlik **customer service window** açılır; o pencerede serbest
 metin gönderebilirsin. Workflow 05'in verdiği tüm cevaplar (onay, iptal, "koltuk doldu", insana devir)
 bu yüzden şablonsuz düz mesaj olarak gider — onaylatman gerekmez.
+
+---
+
+# Ek şablonlar (Workflow 06 / 07 / 08)
+
+## 6. `dental_bekleme_kayit`
+Kullanan: Workflow 06 — biri bekleme listesine kaydolduğunda.
+
+```
+Merhaba {{1}}, bekleme listemize kaydınız alındı. Uygun bir randevu boşluğu açıldığında size buradan haber vereceğiz.
+```
+| Değişken | Örnek |
+|---|---|
+| {{1}} | Ayşe Demir |
+
+---
+
+## 7. `dental_sistem_uyari`
+Kullanan: Workflow 07 — bir workflow patladığında **sana** (kliniğe değil) gider.
+
+```
+Sistem uyarısı: {{1}} akışı hata verdi. Node: {{2}}. Hata: {{3}}
+```
+| Değişken | Örnek |
+|---|---|
+| {{1}} | Dental 02 - 24 Saat Önce Hatırlatma |
+| {{2}} | 24s Hatırlatma Gönder |
+| {{3}} | Request failed with status code 400 |
+
+> Bu şablonu onaylatmak istemezsen Workflow 07'deki WhatsApp node'unu silip yerine n8n'in
+> **Send Email** node'unu koyabilirsin; hata kaydı zaten `Hatalar` sekmesine yazılıyor.
+
+---
+
+## 8. `dental_gunluk_ozet`
+Kullanan: Workflow 08 — her akşam 19:00, klinik sahibine/sekretere.
+
+```
+{{1}} özeti: Yarın {{2}} randevu var ({{3}} onaylı, {{4}} onay bekliyor). Bugün {{5}} iptal oldu, {{6}} boş koltuk dolduruldu. Bekleme listesinde {{7}} kişi var.
+```
+| Değişken | Örnek |
+|---|---|
+| {{1}} | 08.09.2026 |
+| {{2}} | 12 |
+| {{3}} | 9 |
+| {{4}} | 3 |
+| {{5}} | 2 |
+| {{6}} | 1 |
+| {{7}} | 14 |
+
+> Bu mesaj kliniğin her gün otomasyonun işini görmesini sağlıyor — abonelik yenilemesinde
+> en güçlü argüman bu. `Rapor` sekmesinde aynı veriler tarih tarih birikiyor.

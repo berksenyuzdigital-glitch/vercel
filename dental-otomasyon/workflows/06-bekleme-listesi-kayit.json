@@ -1,0 +1,169 @@
+{
+  "name": "Dental 06 - Bekleme Listesine Kayıt",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dental-bekleme",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "w6-webhook",
+      "name": "Bekleme Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-260, 300],
+      "webhookId": "dental-bekleme"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "SHEET_ID", "value": "BURAYA_GOOGLE_SHEET_ID", "type": "string" },
+            { "id": "a2", "name": "SHEET_ADI", "value": "Randevular", "type": "string" },
+            { "id": "a3", "name": "PHONE_NUMBER_ID", "value": "BURAYA_WHATSAPP_PHONE_NUMBER_ID", "type": "string" },
+            { "id": "a4", "name": "GRAPH_VERSION", "value": "v21.0", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "w6-ayarlar",
+      "name": "Ayarlar",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-40, 300]
+    },
+    {
+      "parameters": {
+        "documentId": { "__rl": true, "value": "={{ $json.SHEET_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "={{ $json.SHEET_ADI }}", "mode": "name" },
+        "options": {}
+      },
+      "id": "w6-read",
+      "name": "Mevcut Kayıtları Oku",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Bekleme listesi kaydi. Ayni numara zaten listedeyse tekrar eklemez.\nconst gelen = $('Bekleme Webhook').first().json.body || $('Bekleme Webhook').first().json;\n\nfunction normalizeTel(raw) {\n  let t = String(raw || '').replace(/\\D/g, '');\n  if (t.startsWith('00')) t = t.slice(2);\n  if (t.startsWith('0')) t = t.slice(1);\n  if (t.length === 10) t = '90' + t;\n  return t;\n}\n\nconst ad = String(gelen.ad || gelen.isim || gelen.name || '').trim() || 'Değerli hastamız';\nconst telefon = normalizeTel(gelen.telefon || gelen.tel || gelen.phone || gelen.phone_number);\nconst kaynak = String(gelen.kaynak || gelen.source || 'web').trim();\nconst gecerli = /^90\\d{10}$/.test(telefon);\n\nconst acikDurumlar = ['bekleme', 'teklif_edildi', 'yeni', 'onaylı', 'onayli'];\nconst mukerrer = $input.all().some((i) => String(i.json.Telefon || '').trim() === telefon && acikDurumlar.includes(String(i.json.Durum || '').trim().toLowerCase()));\n\nreturn [{\n  json: {\n    ID: 'BKL-' + $now.toMillis() + '-' + Math.floor(Math.random() * 1000),\n    Ad: ad,\n    Telefon: telefon,\n    Tarih: '',\n    Saat: '',\n    Durum: 'bekleme',\n    Kaynak: kaynak,\n    Guncelleme: $now.setZone('Europe/Istanbul').toFormat('yyyy-MM-dd HH:mm'),\n    gecerli,\n    mukerrer,\n    wa: {\n      messaging_product: 'whatsapp',\n      to: telefon,\n      type: 'template',\n      template: {\n        name: 'dental_bekleme_kayit',\n        language: { code: 'tr' },\n        components: [\n          { type: 'body', parameters: [{ type: 'text', text: ad }] }\n        ]\n      }\n    }\n  }\n}];"
+      },
+      "id": "w6-normalize",
+      "name": "Kaydı Hazırla",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $json.gecerli }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+            },
+            {
+              "id": "c2",
+              "leftValue": "={{ $json.mukerrer }}",
+              "rightValue": true,
+              "operator": { "type": "boolean", "operation": "false", "singleValue": true }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "w6-if",
+      "name": "Yeni ve Geçerli mi?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [640, 300]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": { "__rl": true, "value": "={{ $('Ayarlar').first().json.SHEET_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "={{ $('Ayarlar').first().json.SHEET_ADI }}", "mode": "name" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $json.ID }}",
+            "Ad": "={{ $json.Ad }}",
+            "Telefon": "={{ $json.Telefon }}",
+            "Durum": "={{ $json.Durum }}",
+            "Kaynak": "={{ $json.Kaynak }}",
+            "Guncelleme": "={{ $json.Guncelleme }}"
+          },
+          "matchingColumns": ["ID"],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "w6-append",
+      "name": "Bekleme Listesine Ekle",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [880, 180]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/{{ $('Ayarlar').first().json.GRAPH_VERSION }}/{{ $('Ayarlar').first().json.PHONE_NUMBER_ID }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Kaydı Hazırla').item.json.wa) }}",
+        "options": {}
+      },
+      "id": "w6-wa",
+      "name": "Kayıt Onayı Gönder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [1100, 180],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "w6-noop",
+      "name": "Zaten Kayıtlı / Geçersiz",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [880, 420]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "={{ JSON.stringify({ ok: true }) }}",
+        "options": {}
+      },
+      "id": "w6-respond",
+      "name": "Yanıt Dön",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [1320, 300]
+    }
+  ],
+  "connections": {
+    "Bekleme Webhook": { "main": [[{ "node": "Ayarlar", "type": "main", "index": 0 }]] },
+    "Ayarlar": { "main": [[{ "node": "Mevcut Kayıtları Oku", "type": "main", "index": 0 }]] },
+    "Mevcut Kayıtları Oku": { "main": [[{ "node": "Kaydı Hazırla", "type": "main", "index": 0 }]] },
+    "Kaydı Hazırla": { "main": [[{ "node": "Yeni ve Geçerli mi?", "type": "main", "index": 0 }]] },
+    "Yeni ve Geçerli mi?": {
+      "main": [
+        [{ "node": "Bekleme Listesine Ekle", "type": "main", "index": 0 }],
+        [{ "node": "Zaten Kayıtlı / Geçersiz", "type": "main", "index": 0 }]
+      ]
+    },
+    "Bekleme Listesine Ekle": { "main": [[{ "node": "Kayıt Onayı Gönder", "type": "main", "index": 0 }]] },
+    "Kayıt Onayı Gönder": { "main": [[{ "node": "Yanıt Dön", "type": "main", "index": 0 }]] },
+    "Zaten Kayıtlı / Geçersiz": { "main": [[{ "node": "Yanıt Dön", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Europe/Istanbul", "saveManualExecutions": true },
+  "pinData": {}
+}

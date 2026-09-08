@@ -24,3 +24,15 @@ curl -sS -X POST "$N8N/webhook/dental-wa" \
   -H 'Content-Type: application/json' \
   -d '{"entry":[{"changes":[{"value":{"messages":[{"from":"905321112233","type":"text","text":{"body":"1"}}]}}]}]}'
 echo
+
+echo "5) Bekleme listesine kayıt"
+curl -sS -X POST "$N8N/webhook/dental-bekleme" \
+  -H 'Content-Type: application/json' \
+  -d '{"ad":"Bekleyen Test","telefon":"0533 444 55 66","kaynak":"test"}'
+echo
+
+echo "6) Hasta '2' yazdı simülasyonu (iptal -> koltuk doldurma tetiklenir)"
+curl -sS -X POST "$N8N/webhook/dental-wa" \
+  -H 'Content-Type: application/json' \
+  -d '{"entry":[{"changes":[{"value":{"messages":[{"from":"905321112233","type":"text","text":{"body":"2"}}]}}]}]}'
+echo

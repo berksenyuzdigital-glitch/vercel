@@ -1,0 +1,186 @@
+{
+  "name": "Dental 07 - Hata Bildirimi",
+  "nodes": [
+    {
+      "parameters": {},
+      "id": "w7-trigger",
+      "name": "Hata Yakalayıcı",
+      "type": "n8n-nodes-base.errorTrigger",
+      "typeVersion": 1,
+      "position": [
+        -260,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "SHEET_ID",
+              "value": "BURAYA_GOOGLE_SHEET_ID",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "HATA_SHEET_ADI",
+              "value": "Hatalar",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "PHONE_NUMBER_ID",
+              "value": "BURAYA_WHATSAPP_PHONE_NUMBER_ID",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "GRAPH_VERSION",
+              "value": "v21.0",
+              "type": "string"
+            },
+            {
+              "id": "a5",
+              "name": "OPERATOR_TELEFON",
+              "value": "BURAYA_SENIN_TELEFONUN",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "w7-ayarlar",
+      "name": "Ayarlar",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -40,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Patlayan workflow'un ozetini cikarir. Hasta verisi tasinmaz, sadece teknik bilgi.\nconst cfg = $('Ayarlar').first().json;\nconst h = $('Hata Yakalayıcı').first().json;\n\nfunction normalizeTel(raw) {\n  let t = String(raw || '').replace(/\\D/g, '');\n  if (t.startsWith('00')) t = t.slice(2);\n  if (t.startsWith('0')) t = t.slice(1);\n  if (t.length === 10) t = '90' + t;\n  return t;\n}\n\nconst wfAdi = h?.workflow?.name || 'bilinmeyen workflow';\nconst node = h?.execution?.lastNodeExecuted || '-';\nconst hamMesaj = String(h?.execution?.error?.message || 'bilinmeyen hata').replace(/\\s+/g, ' ').trim();\nconst mesaj = hamMesaj.length > 180 ? hamMesaj.slice(0, 177) + '...' : hamMesaj;\nconst url = h?.execution?.url || '';\n\nreturn [{\n  json: {\n    Zaman: $now.setZone('Europe/Istanbul').toFormat('yyyy-MM-dd HH:mm'),\n    Workflow: wfAdi,\n    Node: node,\n    Hata: mesaj,\n    Execution: url,\n    wa: {\n      messaging_product: 'whatsapp',\n      to: normalizeTel(cfg.OPERATOR_TELEFON),\n      type: 'template',\n      template: {\n        name: 'dental_sistem_uyari',\n        language: { code: 'tr' },\n        components: [\n          {\n            type: 'body',\n            parameters: [\n              { type: 'text', text: wfAdi },\n              { type: 'text', text: node },\n              { type: 'text', text: mesaj }\n            ]\n          }\n        ]\n      }\n    }\n  }\n}];"
+      },
+      "id": "w7-ozet",
+      "name": "Hata Özeti",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        180,
+        300
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Ayarlar').first().json.SHEET_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Ayarlar').first().json.HATA_SHEET_ADI }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Zaman": "={{ $json.Zaman }}",
+            "Workflow": "={{ $json.Workflow }}",
+            "Node": "={{ $json.Node }}",
+            "Hata": "={{ $json.Hata }}",
+            "Execution": "={{ $json.Execution }}"
+          },
+          "matchingColumns": [],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "w7-log",
+      "name": "Hata Kaydı Yaz",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        400,
+        300
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/{{ $('Ayarlar').first().json.GRAPH_VERSION }}/{{ $('Ayarlar').first().json.PHONE_NUMBER_ID }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($('Hata Özeti').item.json.wa) }}",
+        "options": {}
+      },
+      "id": "w7-wa",
+      "name": "Operatöre Uyarı Gönder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        640,
+        300
+      ],
+      "onError": "continueRegularOutput"
+    }
+  ],
+  "connections": {
+    "Hata Yakalayıcı": {
+      "main": [
+        [
+          {
+            "node": "Ayarlar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ayarlar": {
+      "main": [
+        [
+          {
+            "node": "Hata Özeti",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hata Özeti": {
+      "main": [
+        [
+          {
+            "node": "Hata Kaydı Yaz",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hata Kaydı Yaz": {
+      "main": [
+        [
+          {
+            "node": "Operatöre Uyarı Gönder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Istanbul",
+    "saveManualExecutions": true
+  },
+  "pinData": {}
+}

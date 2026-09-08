@@ -1,0 +1,16 @@
+{
+  "SHEET_ID": "1AbCdEfGhIjKlMnOpQrStUvWxYz0123456789",
+  "PHONE_NUMBER_ID": "123456789012345",
+  "N8N_BASE_URL": "https://klinik.app.n8n.cloud",
+
+  "KLINIK_ADI": "Nişantaşı Estetik Diş",
+  "KLINIK_TELEFON": "905321112233",
+  "OPERATOR_TELEFON": "905339998877",
+
+  "KONUM_LINK": "https://maps.app.goo.gl/ornekkonum",
+  "GOOGLE_YORUM_LINK": "https://g.page/r/ornekyorum/review",
+
+  "SLOT_1": "11:00",
+  "SLOT_2": "15:00",
+  "TEKLIF_ADEDI": "10"
+}
