@@ -1,0 +1,10 @@
+# Sekme: Randevular (ana tablo)
+ID,Ad,Telefon,Tarih,Saat,Durum,Kaynak,Hatirlatma24,Hatirlatma2,YorumIstek,TeklifTarih,TeklifSaat,Guncelleme
+RND-ORNEK-1,Mehmet Yılmaz,905321112233,2026-09-09,11:00,yeni,instagram,,,,,,2026-09-08 10:00
+BKL-ORNEK-2,Ayşe Demir,905331112233,,,bekleme,web,,,,,,2026-09-08 10:00
+
+# Sekme: Rapor (Workflow 08 her akşam bir satır ekler)
+Tarih,YarinToplam,YarinOnayli,YarinBekleyen,BugunIptal,DoldurulanKoltuk,BeklemeListesi
+
+# Sekme: Hatalar (Workflow 07 hata olunca yazar)
+Zaman,Workflow,Node,Hata,Execution

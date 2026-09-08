@@ -1,0 +1,440 @@
+{
+  "name": "Dental 05 - WhatsApp Gelen Mesaj Router (1 / 2 / insana devir)",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "GET",
+        "path": "dental-wa",
+        "responseMode": "responseNode",
+        "options": {}
+      },
+      "id": "w5-verify",
+      "name": "Meta Doğrulama (GET)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -260,
+        60
+      ],
+      "webhookId": "dental-wa-verify"
+    },
+    {
+      "parameters": {
+        "respondWith": "text",
+        "responseBody": "={{ $json.query['hub.challenge'] }}",
+        "options": {}
+      },
+      "id": "w5-verify-resp",
+      "name": "Challenge Dön",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.1,
+      "position": [
+        -40,
+        60
+      ]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dental-wa",
+        "options": {}
+      },
+      "id": "w5-webhook",
+      "name": "Gelen Mesaj (POST)",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [
+        -260,
+        320
+      ],
+      "webhookId": "dental-wa-mesaj"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Meta webhook payload'undan sadece telefon + mesaj metnini alir.\n// KVKK: mesaj icerigi HICBIR YERE YAZILMAZ, yalnizca akis icinde 1/2 karari icin kullanilir.\nconst b = $input.first().json.body || $input.first().json;\nconst value = b?.entry?.[0]?.changes?.[0]?.value;\nconst msg = value?.messages?.[0];\nif (!msg) return []; // teslim/okundu bildirimleri: islem yok\n\nlet metin = '';\nif (msg.type === 'text') metin = msg.text?.body || '';\nelse if (msg.type === 'button') metin = msg.button?.text || msg.button?.payload || '';\nelse if (msg.type === 'interactive') metin = msg.interactive?.button_reply?.title || msg.interactive?.list_reply?.title || '';\n\nreturn [{ json: { telefon: String(msg.from || '').replace(/\\D/g, ''), metin } }];"
+      },
+      "id": "w5-parse",
+      "name": "Gelen Mesajı Ayrıştır",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        -40,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "a1",
+              "name": "SHEET_ID",
+              "value": "BURAYA_GOOGLE_SHEET_ID",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "SHEET_ADI",
+              "value": "Randevular",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "PHONE_NUMBER_ID",
+              "value": "BURAYA_WHATSAPP_PHONE_NUMBER_ID",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "GRAPH_VERSION",
+              "value": "v21.0",
+              "type": "string"
+            },
+            {
+              "id": "a5",
+              "name": "IPTAL_WEBHOOK_URL",
+              "value": "https://BURAYA_N8N_ADRESIN/webhook/dental-iptal",
+              "type": "string"
+            },
+            {
+              "id": "a6",
+              "name": "KLINIK_TELEFON",
+              "value": "0212 000 00 00",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "id": "w5-ayarlar",
+      "name": "Ayarlar (Gelen)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        180,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $json.SHEET_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $json.SHEET_ADI }}",
+          "mode": "name"
+        },
+        "options": {}
+      },
+      "id": "w5-read",
+      "name": "Randevuları Oku",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        400,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "jsCode": "// 1 = onay, 2 = iptal, digeri = insana devir.\nconst cfg = $('Ayarlar (Gelen)').first().json;\nconst gelen = $('Gelen Mesajı Ayrıştır').first().json;\nconst tel = String(gelen.telefon || '').trim();\nconst metin = String(gelen.metin || '').trim().toLowerCase();\nconst rows = $input.all().map((i) => i.json);\n\nconst ONAY = ['1', 'evet', 'e', 'ok', 'tamam', 'olur', 'uygun'];\nconst IPTAL = ['2', 'iptal', 'hayır', 'hayir', 'olmaz', 'değişiklik', 'degisiklik'];\nconst AKTIF = ['yeni', 'onaylı', 'onayli', 'teklif_edildi'];\n\nfunction mesaj(govde) {\n  return {\n    messaging_product: 'whatsapp',\n    to: tel,\n    type: 'text',\n    text: { preview_url: false, body: govde }\n  };\n}\nfunction bos(v) { return String(v || '').trim(); }\nfunction gosterim(t) { return t && t.includes('-') ? t.split('-').reverse().join('.') : t; }\n\nconst kayitlar = rows.filter((r) => bos(r.Telefon) === tel);\nconst teklifli = kayitlar.find((r) => bos(r.Durum).toLowerCase() === 'teklif_edildi');\nconst aktif = kayitlar\n  .filter((r) => AKTIF.includes(bos(r.Durum).toLowerCase()))\n  .sort((a, b) => bos(a.Tarih).localeCompare(bos(b.Tarih)))[0];\nconst kayit = teklifli || aktif;\n\n// Tanimadigimiz numara ya da acik randevusu yok: insana devir.\nif (!kayit) {\n  return [{ json: { islem: 'devir', ID: '', tetikle_iptal: false, wa: mesaj('Merhaba, mesajınızı aldık. Danışmanımız en kısa sürede size dönecek. Acil durumlar için: ' + cfg.KLINIK_TELEFON) } }];\n}\n\nconst simdi = $now.setZone('Europe/Istanbul').toFormat('yyyy-MM-dd HH:mm');\n\n// ONAY\nif (ONAY.includes(metin)) {\n  if (bos(kayit.Durum).toLowerCase() === 'teklif_edildi') {\n    const t = bos(kayit.TeklifTarih);\n    const s = bos(kayit.TeklifSaat);\n    // \"Ilk yazan alir\": slot baskasina gittiyse kapat.\n    const dolu = rows.some((r) => bos(r.ID) !== bos(kayit.ID) && bos(r.Tarih) === t && bos(r.Saat) === s && ['onaylı', 'onayli', 'geldi'].includes(bos(r.Durum).toLowerCase()));\n    if (dolu) {\n      return [{ json: { islem: 'slot_dolu', ID: kayit.ID, Durum: 'bekleme', Tarih: bos(kayit.Tarih), Saat: bos(kayit.Saat), Guncelleme: simdi, tetikle_iptal: false, wa: mesaj('Maalesef o saat az önce doldu. Sizi bekleme listemizde tutuyoruz, ilk boşlukta yine ilk siz haberdar olacaksınız.') } }];\n    }\n    return [{ json: { islem: 'slot_verildi', ID: kayit.ID, Durum: 'onaylı', Tarih: t, Saat: s, Guncelleme: simdi, tetikle_iptal: false, wa: mesaj('Harika! Randevunuz ' + gosterim(t) + ' ' + s + ' olarak oluşturuldu. Görüşmek üzere.') } }];\n  }\n  return [{ json: { islem: 'onay', ID: kayit.ID, Durum: 'onaylı', Tarih: bos(kayit.Tarih), Saat: bos(kayit.Saat), Guncelleme: simdi, tetikle_iptal: false, wa: mesaj('Teşekkürler, randevunuz ' + gosterim(bos(kayit.Tarih)) + ' ' + bos(kayit.Saat) + ' için onaylandı.') } }];\n}\n\n// IPTAL / DEGISIKLIK\nif (IPTAL.includes(metin)) {\n  const durum = bos(kayit.Durum).toLowerCase();\n  const teklifliMi = durum === 'teklif_edildi';\n  // Henuz onaylanmamis lead \"2\" diyorsa teklif edilen saat uymamistir; hastayi kaybetme, listeye al.\n  const onaylanmamis = durum === 'yeni';\n  const beklemeyeGitsin = teklifliMi || onaylanmamis;\n  // Koltuk gercekten bosaliyorsa (tarih/saat tutulmustu) doldurma akisini tetikle.\n  const koltukBosaldi = !teklifliMi && bos(kayit.Tarih) !== '' && bos(kayit.Saat) !== '';\n\n  let yanit;\n  if (teklifliMi) yanit = 'Anlaşıldı, sizi bekleme listemizde tutuyoruz. Yeni bir boşluk açıldığında haber vereceğiz.';\n  else if (onaylanmamis) yanit = 'Anlaşıldı, o saatler uymadı. Sizi bekleme listemize aldık; uygun bir boşluk açıldığında ilk siz haberdar olacaksınız.';\n  else yanit = 'Randevunuz iptal edildi. Yeni bir randevu için bu mesaja yazmanız yeterli.';\n\n  return [{\n    json: {\n      islem: beklemeyeGitsin ? 'beklemeye_alindi' : 'iptal',\n      ID: kayit.ID,\n      Durum: beklemeyeGitsin ? 'bekleme' : 'iptal',\n      // Bekleme kaydinda tarih/saat tutulmaz, koltuk serbest kalir.\n      Tarih: beklemeyeGitsin ? '' : bos(kayit.Tarih),\n      Saat: beklemeyeGitsin ? '' : bos(kayit.Saat),\n      Guncelleme: simdi,\n      tetikle_iptal: koltukBosaldi,\n      iptal_tarih: bos(kayit.Tarih),\n      iptal_saat: bos(kayit.Saat),\n      wa: mesaj(yanit)\n    }\n  }];\n}\n\n// DIGER: insana devir\nreturn [{ json: { islem: 'devir', ID: '', tetikle_iptal: false, wa: mesaj('Mesajınızı aldık, danışmanımız en kısa sürede size dönecek. Randevunuzu onaylamak için 1, iptal/değişiklik için 2 yazabilirsiniz.') } }];"
+      },
+      "id": "w5-karar",
+      "name": "Karar",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        640,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/{{ $('Ayarlar (Gelen)').first().json.GRAPH_VERSION }}/{{ $('Ayarlar (Gelen)').first().json.PHONE_NUMBER_ID }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.wa) }}",
+        "options": {}
+      },
+      "id": "w5-reply",
+      "name": "Hastaya Yanıt Ver",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        880,
+        320
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c1",
+              "leftValue": "={{ $('Karar').item.json.ID }}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "w5-if-update",
+      "name": "Kayıt Güncellenecek mi?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1100,
+        320
+      ]
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Ayarlar (Gelen)').first().json.SHEET_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Ayarlar (Gelen)').first().json.SHEET_ADI }}",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $('Karar').item.json.ID }}",
+            "Durum": "={{ $('Karar').item.json.Durum }}",
+            "Tarih": "={{ $('Karar').item.json.Tarih }}",
+            "Saat": "={{ $('Karar').item.json.Saat }}",
+            "Guncelleme": "={{ $('Karar').item.json.Guncelleme }}"
+          },
+          "matchingColumns": [
+            "ID"
+          ],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "w5-update",
+      "name": "Durumu Güncelle",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [
+        1320,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
+          "conditions": [
+            {
+              "id": "c2",
+              "leftValue": "={{ $('Karar').item.json.tetikle_iptal }}",
+              "rightValue": true,
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "looseTypeValidation": true,
+        "options": {}
+      },
+      "id": "w5-if-iptal",
+      "name": "Boşalan Koltuk Var mı?",
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.2,
+      "position": [
+        1540,
+        220
+      ]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $('Ayarlar (Gelen)').first().json.IPTAL_WEBHOOK_URL }}",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify({ tarih: $('Karar').item.json.iptal_tarih, saat: $('Karar').item.json.iptal_saat }) }}",
+        "options": {}
+      },
+      "id": "w5-tetik",
+      "name": "İptal Doldurmayı Tetikle",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1760,
+        220
+      ],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {},
+      "id": "w5-noop",
+      "name": "Sadece Yanıtla",
+      "type": "n8n-nodes-base.noOp",
+      "typeVersion": 1,
+      "position": [
+        1320,
+        440
+      ]
+    }
+  ],
+  "connections": {
+    "Meta Doğrulama (GET)": {
+      "main": [
+        [
+          {
+            "node": "Challenge Dön",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gelen Mesaj (POST)": {
+      "main": [
+        [
+          {
+            "node": "Gelen Mesajı Ayrıştır",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Gelen Mesajı Ayrıştır": {
+      "main": [
+        [
+          {
+            "node": "Ayarlar (Gelen)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Ayarlar (Gelen)": {
+      "main": [
+        [
+          {
+            "node": "Randevuları Oku",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Randevuları Oku": {
+      "main": [
+        [
+          {
+            "node": "Karar",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Karar": {
+      "main": [
+        [
+          {
+            "node": "Hastaya Yanıt Ver",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Hastaya Yanıt Ver": {
+      "main": [
+        [
+          {
+            "node": "Kayıt Güncellenecek mi?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Kayıt Güncellenecek mi?": {
+      "main": [
+        [
+          {
+            "node": "Durumu Güncelle",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Sadece Yanıtla",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Durumu Güncelle": {
+      "main": [
+        [
+          {
+            "node": "Boşalan Koltuk Var mı?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Boşalan Koltuk Var mı?": {
+      "main": [
+        [
+          {
+            "node": "İptal Doldurmayı Tetikle",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        []
+      ]
+    }
+  },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Istanbul",
+    "saveManualExecutions": true
+  },
+  "pinData": {}
+}

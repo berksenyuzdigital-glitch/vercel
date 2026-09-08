@@ -1,0 +1,106 @@
+{
+  "name": "Dental 04 - Tedavi Sonrası Google Yorum İsteği",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "triggerAtHour": 12, "triggerAtMinute": 0 }] }
+      },
+      "id": "w4-cron",
+      "name": "Her Gün 12:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-260, 300]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "SHEET_ID", "value": "BURAYA_GOOGLE_SHEET_ID", "type": "string" },
+            { "id": "a2", "name": "SHEET_ADI", "value": "Randevular", "type": "string" },
+            { "id": "a3", "name": "PHONE_NUMBER_ID", "value": "BURAYA_WHATSAPP_PHONE_NUMBER_ID", "type": "string" },
+            { "id": "a4", "name": "GRAPH_VERSION", "value": "v21.0", "type": "string" },
+            { "id": "a5", "name": "GOOGLE_YORUM_LINK", "value": "https://g.page/r/BURAYA_YORUM_LINKI/review", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "w4-ayarlar",
+      "name": "Ayarlar",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-40, 300]
+    },
+    {
+      "parameters": {
+        "documentId": { "__rl": true, "value": "={{ $json.SHEET_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "={{ $json.SHEET_ADI }}", "mode": "name" },
+        "options": {}
+      },
+      "id": "w4-read",
+      "name": "Randevuları Oku",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [180, 300]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Dun kliniğe gelen (Durum = geldi) ve henuz yorum istegi gonderilmemis hastalar.\nconst cfg = $('Ayarlar').first().json;\nconst dun = $now.setZone('Europe/Istanbul').minus({ days: 1 }).toFormat('yyyy-MM-dd');\nconst out = [];\n\nfor (const item of $input.all()) {\n  const r = item.json;\n  if (String(r.Tarih || '').trim() !== dun) continue;\n  if (String(r.Durum || '').trim().toLowerCase() !== 'geldi') continue;\n  if (String(r.YorumIstek || '').trim() !== '') continue;\n  if (!/^90\\d{10}$/.test(String(r.Telefon || '').trim())) continue;\n\n  out.push({\n    json: {\n      ID: r.ID,\n      Telefon: String(r.Telefon).trim(),\n      wa: {\n        messaging_product: 'whatsapp',\n        to: String(r.Telefon).trim(),\n        type: 'template',\n        template: {\n          name: 'dental_yorum_istek',\n          language: { code: 'tr' },\n          components: [\n            {\n              type: 'body',\n              parameters: [\n                { type: 'text', text: r.Ad || 'Değerli hastamız' },\n                { type: 'text', text: cfg.GOOGLE_YORUM_LINK }\n              ]\n            }\n          ]\n        }\n      }\n    }\n  });\n}\n\nreturn out;"
+      },
+      "id": "w4-filtre",
+      "name": "Dün Gelenleri Seç",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 300]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/{{ $('Ayarlar').first().json.GRAPH_VERSION }}/{{ $('Ayarlar').first().json.PHONE_NUMBER_ID }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.wa) }}",
+        "options": { "batching": { "batch": { "batchSize": 10, "batchInterval": 1000 } } }
+      },
+      "id": "w4-wa",
+      "name": "Yorum İsteği Gönder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [640, 300],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": { "__rl": true, "value": "={{ $('Ayarlar').first().json.SHEET_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "={{ $('Ayarlar').first().json.SHEET_ADI }}", "mode": "name" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $('Dün Gelenleri Seç').item.json.ID }}",
+            "YorumIstek": "={{ $now.setZone('Europe/Istanbul').toFormat('yyyy-MM-dd HH:mm') }}",
+            "Guncelleme": "={{ $now.setZone('Europe/Istanbul').toFormat('yyyy-MM-dd HH:mm') }}"
+          },
+          "matchingColumns": ["ID"],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "w4-update",
+      "name": "Yorum İsteği İşaretle",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [880, 300]
+    }
+  ],
+  "connections": {
+    "Her Gün 12:00": { "main": [[{ "node": "Ayarlar", "type": "main", "index": 0 }]] },
+    "Ayarlar": { "main": [[{ "node": "Randevuları Oku", "type": "main", "index": 0 }]] },
+    "Randevuları Oku": { "main": [[{ "node": "Dün Gelenleri Seç", "type": "main", "index": 0 }]] },
+    "Dün Gelenleri Seç": { "main": [[{ "node": "Yorum İsteği Gönder", "type": "main", "index": 0 }]] },
+    "Yorum İsteği Gönder": { "main": [[{ "node": "Yorum İsteği İşaretle", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Europe/Istanbul", "saveManualExecutions": true },
+  "pinData": {}
+}

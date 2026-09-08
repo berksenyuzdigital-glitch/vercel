@@ -1,0 +1,210 @@
+{
+  "name": "Dental 03 - 2 Saat Konum + İptal Doldurma",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": { "interval": [{ "field": "minutes", "minutesInterval": 15 }] }
+      },
+      "id": "w3-cron",
+      "name": "15 Dakikada Bir",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [-260, 120]
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "a1", "name": "SHEET_ID", "value": "BURAYA_GOOGLE_SHEET_ID", "type": "string" },
+            { "id": "a2", "name": "SHEET_ADI", "value": "Randevular", "type": "string" },
+            { "id": "a3", "name": "PHONE_NUMBER_ID", "value": "BURAYA_WHATSAPP_PHONE_NUMBER_ID", "type": "string" },
+            { "id": "a4", "name": "GRAPH_VERSION", "value": "v21.0", "type": "string" },
+            { "id": "a5", "name": "KONUM_LINK", "value": "https://maps.app.goo.gl/BURAYA_KLINIK_KONUMU", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "w3-ayarlar",
+      "name": "Ayarlar",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-40, 120]
+    },
+    {
+      "parameters": {
+        "documentId": { "__rl": true, "value": "={{ $json.SHEET_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "={{ $json.SHEET_ADI }}", "mode": "name" },
+        "options": {}
+      },
+      "id": "w3-read",
+      "name": "Randevuları Oku",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [180, 120]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Randevusuna 105-135 dakika kalan, konum mesaji gitmemis kayitlari secer.\n// 15 dk'lik cron ile calistigi icin bu pencere her randevuyu tam bir kez yakalar.\nconst cfg = $('Ayarlar').first().json;\nconst simdi = $now.setZone('Europe/Istanbul');\nconst bugun = simdi.toFormat('yyyy-MM-dd');\nconst aktifDurumlar = ['yeni', 'onaylı', 'onayli'];\nconst out = [];\n\nfor (const item of $input.all()) {\n  const r = item.json;\n  if (String(r.Tarih || '').trim() !== bugun) continue;\n  if (!aktifDurumlar.includes(String(r.Durum || '').trim().toLowerCase())) continue;\n  if (String(r.Hatirlatma2 || '').trim() !== '') continue;\n\n  const saat = String(r.Saat || '').trim();\n  if (!/^\\d{1,2}:\\d{2}$/.test(saat)) continue;\n  const [ss, dd] = saat.split(':').map(Number);\n  const randevu = simdi.set({ hour: ss, minute: dd, second: 0, millisecond: 0 });\n  const kalanDk = randevu.diff(simdi, 'minutes').minutes;\n  if (kalanDk < 105 || kalanDk > 135) continue;\n  if (!/^90\\d{10}$/.test(String(r.Telefon || '').trim())) continue;\n\n  out.push({\n    json: {\n      ID: r.ID,\n      Telefon: String(r.Telefon).trim(),\n      wa: {\n        messaging_product: 'whatsapp',\n        to: String(r.Telefon).trim(),\n        type: 'template',\n        template: {\n          name: 'dental_2saat_konum',\n          language: { code: 'tr' },\n          components: [\n            {\n              type: 'body',\n              parameters: [\n                { type: 'text', text: r.Ad || 'Değerli hastamız' },\n                { type: 'text', text: saat },\n                { type: 'text', text: cfg.KONUM_LINK }\n              ]\n            }\n          ]\n        }\n      }\n    }\n  });\n}\n\nreturn out;"
+      },
+      "id": "w3-filtre",
+      "name": "2 Saat Kalanları Seç",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 120]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/{{ $('Ayarlar').first().json.GRAPH_VERSION }}/{{ $('Ayarlar').first().json.PHONE_NUMBER_ID }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.wa) }}",
+        "options": { "batching": { "batch": { "batchSize": 10, "batchInterval": 1000 } } }
+      },
+      "id": "w3-wa",
+      "name": "Konum Mesajı Gönder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [640, 120],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": { "__rl": true, "value": "={{ $('Ayarlar').first().json.SHEET_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "={{ $('Ayarlar').first().json.SHEET_ADI }}", "mode": "name" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $('2 Saat Kalanları Seç').item.json.ID }}",
+            "Hatirlatma2": "={{ $now.setZone('Europe/Istanbul').toFormat('yyyy-MM-dd HH:mm') }}",
+            "Guncelleme": "={{ $now.setZone('Europe/Istanbul').toFormat('yyyy-MM-dd HH:mm') }}"
+          },
+          "matchingColumns": ["ID"],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "w3-update",
+      "name": "Konum Gönderildi İşaretle",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [880, 120]
+    },
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "dental-iptal",
+        "options": {}
+      },
+      "id": "w3-webhook",
+      "name": "İptal Bildirimi Webhook",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [-260, 520],
+      "webhookId": "dental-iptal"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            { "id": "b1", "name": "SHEET_ID", "value": "BURAYA_GOOGLE_SHEET_ID", "type": "string" },
+            { "id": "b2", "name": "SHEET_ADI", "value": "Randevular", "type": "string" },
+            { "id": "b3", "name": "PHONE_NUMBER_ID", "value": "BURAYA_WHATSAPP_PHONE_NUMBER_ID", "type": "string" },
+            { "id": "b4", "name": "GRAPH_VERSION", "value": "v21.0", "type": "string" },
+            { "id": "b5", "name": "TEKLIF_ADEDI", "value": "10", "type": "string" },
+            { "id": "b6", "name": "bos_tarih", "value": "={{ $json.body.tarih }}", "type": "string" },
+            { "id": "b7", "name": "bos_saat", "value": "={{ $json.body.saat }}", "type": "string" }
+          ]
+        },
+        "options": {}
+      },
+      "id": "w3-ayarlar-iptal",
+      "name": "Ayarlar (İptal)",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [-40, 520]
+    },
+    {
+      "parameters": {
+        "documentId": { "__rl": true, "value": "={{ $json.SHEET_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "={{ $json.SHEET_ADI }}", "mode": "name" },
+        "options": {}
+      },
+      "id": "w3-read2",
+      "name": "Bekleme Listesini Oku",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [180, 520]
+    },
+    {
+      "parameters": {
+        "jsCode": "// Bosalan koltugu bekleme listesine teklif eder. \"Ilk yazan alir\" mantigi\n// Workflow 05'teki router tarafindan kapatilir.\nconst cfg = $('Ayarlar (İptal)').first().json;\nconst tarih = String(cfg.bos_tarih || '').trim();\nconst saat = String(cfg.bos_saat || '').trim();\nif (!tarih || !saat) return [];\n\nconst limit = Number(cfg.TEKLIF_ADEDI || 10);\nconst tarihGosterim = tarih.includes('-') ? tarih.split('-').reverse().join('.') : tarih;\nconst out = [];\n\nfor (const item of $input.all()) {\n  if (out.length >= limit) break;\n  const r = item.json;\n  if (String(r.Durum || '').trim().toLowerCase() !== 'bekleme') continue;\n  if (!/^90\\d{10}$/.test(String(r.Telefon || '').trim())) continue;\n\n  out.push({\n    json: {\n      ID: r.ID,\n      Telefon: String(r.Telefon).trim(),\n      TeklifTarih: tarih,\n      TeklifSaat: saat,\n      wa: {\n        messaging_product: 'whatsapp',\n        to: String(r.Telefon).trim(),\n        type: 'template',\n        template: {\n          name: 'dental_iptal_doldur',\n          language: { code: 'tr' },\n          components: [\n            {\n              type: 'body',\n              parameters: [\n                { type: 'text', text: r.Ad || 'Değerli hastamız' },\n                { type: 'text', text: tarihGosterim },\n                { type: 'text', text: saat }\n              ]\n            }\n          ]\n        }\n      }\n    }\n  });\n}\n\nreturn out;"
+      },
+      "id": "w3-bekleme",
+      "name": "Bekleme Listesini Seç",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [400, 520]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "=https://graph.facebook.com/{{ $('Ayarlar (İptal)').first().json.GRAPH_VERSION }}/{{ $('Ayarlar (İptal)').first().json.PHONE_NUMBER_ID }}/messages",
+        "authentication": "genericCredentialType",
+        "genericAuthType": "httpHeaderAuth",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ JSON.stringify($json.wa) }}",
+        "options": { "batching": { "batch": { "batchSize": 10, "batchInterval": 1000 } } }
+      },
+      "id": "w3-wa2",
+      "name": "Boş Koltuk Teklifi Gönder",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [640, 520],
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": { "__rl": true, "value": "={{ $('Ayarlar (İptal)').first().json.SHEET_ID }}", "mode": "id" },
+        "sheetName": { "__rl": true, "value": "={{ $('Ayarlar (İptal)').first().json.SHEET_ADI }}", "mode": "name" },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "ID": "={{ $('Bekleme Listesini Seç').item.json.ID }}",
+            "Durum": "teklif_edildi",
+            "TeklifTarih": "={{ $('Bekleme Listesini Seç').item.json.TeklifTarih }}",
+            "TeklifSaat": "={{ $('Bekleme Listesini Seç').item.json.TeklifSaat }}",
+            "Guncelleme": "={{ $now.setZone('Europe/Istanbul').toFormat('yyyy-MM-dd HH:mm') }}"
+          },
+          "matchingColumns": ["ID"],
+          "schema": []
+        },
+        "options": {}
+      },
+      "id": "w3-update2",
+      "name": "Teklif Edildi İşaretle",
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [880, 520]
+    }
+  ],
+  "connections": {
+    "15 Dakikada Bir": { "main": [[{ "node": "Ayarlar", "type": "main", "index": 0 }]] },
+    "Ayarlar": { "main": [[{ "node": "Randevuları Oku", "type": "main", "index": 0 }]] },
+    "Randevuları Oku": { "main": [[{ "node": "2 Saat Kalanları Seç", "type": "main", "index": 0 }]] },
+    "2 Saat Kalanları Seç": { "main": [[{ "node": "Konum Mesajı Gönder", "type": "main", "index": 0 }]] },
+    "Konum Mesajı Gönder": { "main": [[{ "node": "Konum Gönderildi İşaretle", "type": "main", "index": 0 }]] },
+    "İptal Bildirimi Webhook": { "main": [[{ "node": "Ayarlar (İptal)", "type": "main", "index": 0 }]] },
+    "Ayarlar (İptal)": { "main": [[{ "node": "Bekleme Listesini Oku", "type": "main", "index": 0 }]] },
+    "Bekleme Listesini Oku": { "main": [[{ "node": "Bekleme Listesini Seç", "type": "main", "index": 0 }]] },
+    "Bekleme Listesini Seç": { "main": [[{ "node": "Boş Koltuk Teklifi Gönder", "type": "main", "index": 0 }]] },
+    "Boş Koltuk Teklifi Gönder": { "main": [[{ "node": "Teklif Edildi İşaretle", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "timezone": "Europe/Istanbul", "saveManualExecutions": true },
+  "pinData": {}
+}
