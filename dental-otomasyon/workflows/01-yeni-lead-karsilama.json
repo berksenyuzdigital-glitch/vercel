@@ -12,20 +12,58 @@
       "name": "Lead Webhook",
       "type": "n8n-nodes-base.webhook",
       "typeVersion": 2,
-      "position": [-260, 300],
+      "position": [
+        -260,
+        300
+      ],
       "webhookId": "dental-lead"
     },
     {
       "parameters": {
         "assignments": {
           "assignments": [
-            { "id": "a1", "name": "SHEET_ID", "value": "BURAYA_GOOGLE_SHEET_ID", "type": "string" },
-            { "id": "a2", "name": "SHEET_ADI", "value": "Randevular", "type": "string" },
-            { "id": "a3", "name": "PHONE_NUMBER_ID", "value": "BURAYA_WHATSAPP_PHONE_NUMBER_ID", "type": "string" },
-            { "id": "a4", "name": "GRAPH_VERSION", "value": "v21.0", "type": "string" },
-            { "id": "a5", "name": "KLINIK_ADI", "value": "Örnek Dental Klinik", "type": "string" },
-            { "id": "a6", "name": "SLOT_1", "value": "11:00", "type": "string" },
-            { "id": "a7", "name": "SLOT_2", "value": "15:00", "type": "string" }
+            {
+              "id": "a1",
+              "name": "SHEET_ID",
+              "value": "BURAYA_GOOGLE_SHEET_ID",
+              "type": "string"
+            },
+            {
+              "id": "a2",
+              "name": "SHEET_ADI",
+              "value": "Randevular",
+              "type": "string"
+            },
+            {
+              "id": "a3",
+              "name": "PHONE_NUMBER_ID",
+              "value": "BURAYA_WHATSAPP_PHONE_NUMBER_ID",
+              "type": "string"
+            },
+            {
+              "id": "a4",
+              "name": "GRAPH_VERSION",
+              "value": "v21.0",
+              "type": "string"
+            },
+            {
+              "id": "a5",
+              "name": "KLINIK_ADI",
+              "value": "Örnek Dental Klinik",
+              "type": "string"
+            },
+            {
+              "id": "a6",
+              "name": "SLOT_1",
+              "value": "11:00",
+              "type": "string"
+            },
+            {
+              "id": "a7",
+              "name": "SLOT_2",
+              "value": "15:00",
+              "type": "string"
+            }
           ]
         },
         "options": {}
@@ -34,28 +72,43 @@
       "name": "Ayarlar",
       "type": "n8n-nodes-base.set",
       "typeVersion": 3.4,
-      "position": [-40, 300]
+      "position": [
+        -40,
+        300
+      ]
     },
     {
       "parameters": {
-        "jsCode": "// Gelen lead'i normalize eder, randevu teklifini hazirlar.\n// KVKK: burada SADECE randevu alanlari islenir. Sikayet/teshis/tedavi bilgisi TASINMAZ.\nconst cfg = $('Ayarlar').first().json;\nconst out = [];\n\nfunction normalizeTel(raw) {\n  let t = String(raw || '').replace(/\\D/g, '');\n  if (t.startsWith('00')) t = t.slice(2);\n  if (t.startsWith('0')) t = t.slice(1);\n  if (t.length === 10) t = '90' + t;\n  return t;\n}\n\nfor (const item of $input.all()) {\n  const b = item.json.body || item.json;\n  const ad = String(b.ad || b.isim || b.name || b.full_name || '').trim() || 'Değerli hastamız';\n  const telefon = normalizeTel(b.telefon || b.tel || b.phone || b.phone_number);\n  const kaynak = String(b.kaynak || b.source || 'web').trim();\n  const gecerli = /^90\\d{10}$/.test(telefon);\n\n  // Yarin; pazara denk gelirse pazartesiye kaydir.\n  let gun = $now.setZone('Europe/Istanbul').plus({ days: 1 }).startOf('day');\n  if (gun.weekday === 7) gun = gun.plus({ days: 1 });\n\n  out.push({\n    json: {\n      ID: 'RND-' + $now.toMillis() + '-' + Math.floor(Math.random() * 1000),\n      Ad: ad,\n      Telefon: telefon,\n      Tarih: gun.toFormat('yyyy-MM-dd'),\n      Saat: cfg.SLOT_1,\n      Durum: 'yeni',\n      Kaynak: kaynak,\n      Hatirlatma24: '',\n      Hatirlatma2: '',\n      YorumIstek: '',\n      Guncelleme: $now.setZone('Europe/Istanbul').toFormat('yyyy-MM-dd HH:mm'),\n      gecerli,\n      tarih_gosterim: gun.toFormat('dd.MM.yyyy'),\n      wa: {\n        messaging_product: 'whatsapp',\n        to: telefon,\n        type: 'template',\n        template: {\n          name: 'dental_hosgeldin_randevu_teklif',\n          language: { code: 'tr' },\n          components: [\n            {\n              type: 'body',\n              parameters: [\n                { type: 'text', text: ad },\n                { type: 'text', text: gun.toFormat('dd.MM.yyyy') },\n                { type: 'text', text: cfg.SLOT_1 },\n                { type: 'text', text: cfg.SLOT_2 }\n              ]\n            }\n          ]\n        }\n      }\n    }\n  });\n}\n\nreturn out;"
+        "jsCode": "// Gelen lead'i normalize eder, randevu teklifini hazirlar.\n// KVKK: burada SADECE randevu alanlari islenir. Sikayet/teshis/tedavi bilgisi TASINMAZ.\nconst cfg = $('Ayarlar').first().json;\nconst out = [];\n\nfunction normalizeTel(raw) {\n  let t = String(raw || '').replace(/\\D/g, '');\n  if (t.startsWith('00')) t = t.slice(2);\n  if (t.startsWith('0')) t = t.slice(1);\n  if (t.length === 10) t = '90' + t;\n  return t;\n}\n\nfor (const item of $input.all()) {\n  const b = item.json.body || item.json;\n  const ad = String(b.ad || b.isim || b.name || b.full_name || '').trim() || 'Değerli hastamız';\n  const telefon = normalizeTel(b.telefon || b.tel || b.phone || b.phone_number);\n  const kaynak = String(b.kaynak || b.source || 'web').trim();\n  const gecerli = /^90\\d{10}$/.test(telefon);\n\n  // Yarin; pazara denk gelirse pazartesiye kaydir.\n  let gun = $now.setZone('Europe/Istanbul').plus({ days: 1 }).startOf('day');\n  if (gun.weekday === 7) gun = gun.plus({ days: 1 });\n\n  out.push({\n    json: {\n      ID: 'RND-' + $now.toMillis() + '-' + String(Math.floor(Math.random() * 1e9)).padStart(9, '0'),\n      Ad: ad,\n      Telefon: telefon,\n      Tarih: gun.toFormat('yyyy-MM-dd'),\n      Saat: cfg.SLOT_1,\n      Durum: 'yeni',\n      Kaynak: kaynak,\n      Hatirlatma24: '',\n      Hatirlatma2: '',\n      YorumIstek: '',\n      Guncelleme: $now.setZone('Europe/Istanbul').toFormat('yyyy-MM-dd HH:mm'),\n      gecerli,\n      tarih_gosterim: gun.toFormat('dd.MM.yyyy'),\n      wa: {\n        messaging_product: 'whatsapp',\n        to: telefon,\n        type: 'template',\n        template: {\n          name: 'dental_hosgeldin_randevu_teklif',\n          language: { code: 'tr' },\n          components: [\n            {\n              type: 'body',\n              parameters: [\n                { type: 'text', text: ad },\n                { type: 'text', text: gun.toFormat('dd.MM.yyyy') },\n                { type: 'text', text: cfg.SLOT_1 },\n                { type: 'text', text: cfg.SLOT_2 }\n              ]\n            }\n          ]\n        }\n      }\n    }\n  });\n}\n\nreturn out;"
       },
       "id": "w1-normalize",
       "name": "Lead Normalize",
       "type": "n8n-nodes-base.code",
       "typeVersion": 2,
-      "position": [180, 300]
+      "position": [
+        180,
+        300
+      ]
     },
     {
       "parameters": {
         "conditions": {
-          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "loose", "version": 2 },
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "loose",
+            "version": 2
+          },
           "conditions": [
             {
               "id": "c1",
               "leftValue": "={{ $json.gecerli }}",
               "rightValue": true,
-              "operator": { "type": "boolean", "operation": "true", "singleValue": true }
+              "operator": {
+                "type": "boolean",
+                "operation": "true",
+                "singleValue": true
+              }
             }
           ],
           "combinator": "and"
@@ -67,13 +120,24 @@
       "name": "Telefon Geçerli mi?",
       "type": "n8n-nodes-base.if",
       "typeVersion": 2.2,
-      "position": [400, 300]
+      "position": [
+        400,
+        300
+      ]
     },
     {
       "parameters": {
         "operation": "append",
-        "documentId": { "__rl": true, "value": "={{ $('Ayarlar').first().json.SHEET_ID }}", "mode": "id" },
-        "sheetName": { "__rl": true, "value": "={{ $('Ayarlar').first().json.SHEET_ADI }}", "mode": "name" },
+        "documentId": {
+          "__rl": true,
+          "value": "={{ $('Ayarlar').first().json.SHEET_ID }}",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "={{ $('Ayarlar').first().json.SHEET_ADI }}",
+          "mode": "name"
+        },
         "columns": {
           "mappingMode": "defineBelow",
           "value": {
@@ -89,7 +153,9 @@
             "YorumIstek": "={{ $json.YorumIstek }}",
             "Guncelleme": "={{ $json.Guncelleme }}"
           },
-          "matchingColumns": ["ID"],
+          "matchingColumns": [
+            "ID"
+          ],
           "schema": []
         },
         "options": {}
@@ -98,7 +164,10 @@
       "name": "Randevu Kaydet",
       "type": "n8n-nodes-base.googleSheets",
       "typeVersion": 4.5,
-      "position": [640, 180]
+      "position": [
+        640,
+        180
+      ]
     },
     {
       "parameters": {
@@ -115,7 +184,10 @@
       "name": "WhatsApp Karşılama Gönder",
       "type": "n8n-nodes-base.httpRequest",
       "typeVersion": 4.2,
-      "position": [880, 180],
+      "position": [
+        880,
+        180
+      ],
       "onError": "continueRegularOutput"
     },
     {
@@ -124,7 +196,10 @@
       "name": "Geçersiz Telefon (Atla)",
       "type": "n8n-nodes-base.noOp",
       "typeVersion": 1,
-      "position": [640, 420]
+      "position": [
+        640,
+        420
+      ]
     },
     {
       "parameters": {
@@ -136,23 +211,102 @@
       "name": "Yanıt Dön",
       "type": "n8n-nodes-base.respondToWebhook",
       "typeVersion": 1.1,
-      "position": [1120, 300]
+      "position": [
+        1120,
+        300
+      ]
     }
   ],
   "connections": {
-    "Lead Webhook": { "main": [[{ "node": "Ayarlar", "type": "main", "index": 0 }]] },
-    "Ayarlar": { "main": [[{ "node": "Lead Normalize", "type": "main", "index": 0 }]] },
-    "Lead Normalize": { "main": [[{ "node": "Telefon Geçerli mi?", "type": "main", "index": 0 }]] },
-    "Telefon Geçerli mi?": {
+    "Lead Webhook": {
       "main": [
-        [{ "node": "Randevu Kaydet", "type": "main", "index": 0 }],
-        [{ "node": "Geçersiz Telefon (Atla)", "type": "main", "index": 0 }]
+        [
+          {
+            "node": "Ayarlar",
+            "type": "main",
+            "index": 0
+          }
+        ]
       ]
     },
-    "Randevu Kaydet": { "main": [[{ "node": "WhatsApp Karşılama Gönder", "type": "main", "index": 0 }]] },
-    "WhatsApp Karşılama Gönder": { "main": [[{ "node": "Yanıt Dön", "type": "main", "index": 0 }]] },
-    "Geçersiz Telefon (Atla)": { "main": [[{ "node": "Yanıt Dön", "type": "main", "index": 0 }]] }
+    "Ayarlar": {
+      "main": [
+        [
+          {
+            "node": "Lead Normalize",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Lead Normalize": {
+      "main": [
+        [
+          {
+            "node": "Telefon Geçerli mi?",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Telefon Geçerli mi?": {
+      "main": [
+        [
+          {
+            "node": "Randevu Kaydet",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Geçersiz Telefon (Atla)",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Randevu Kaydet": {
+      "main": [
+        [
+          {
+            "node": "WhatsApp Karşılama Gönder",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "WhatsApp Karşılama Gönder": {
+      "main": [
+        [
+          {
+            "node": "Yanıt Dön",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Geçersiz Telefon (Atla)": {
+      "main": [
+        [
+          {
+            "node": "Yanıt Dön",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
   },
-  "settings": { "executionOrder": "v1", "timezone": "Europe/Istanbul", "saveManualExecutions": true },
+  "settings": {
+    "executionOrder": "v1",
+    "timezone": "Europe/Istanbul",
+    "saveManualExecutions": true
+  },
   "pinData": {}
 }

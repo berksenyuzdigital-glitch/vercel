@@ -153,6 +153,8 @@ Satarken atlanmaması gerekenler:
   (`03` içindeki `2 Saat Kalanları Seç`), yoksa ya çift mesaj ya atlama olur.
 - Her kliniğe **kendi Sheet'i + kendi WhatsApp numarası**. Aynı Sheet'te iki klinik tutma.
 - Günlük kullanım, sekreter kılavuzu ve sorun giderme: **`KULLANIM.md`**.
+- Test etme: **`TEST.md`**. En hızlısı `node test/otomasyon-testi.mjs` — kurulum gerektirmeden
+  tüm akışı simüle eder, 10 saniyede biter.
 - `Rapor` sekmesi 1 ay birikince kliniğe "no-show şu kadar düştü, şu kadar koltuk doldu" diye
   somut tablo gösterirsin — yenileme görüşmesinin dayanağı bu, tahmini rakamlar değil.
 - Metindeki pazar verileri (otomasyon kullanım oranı, no-show düşüşü) senin verdiğin rakamlar; doğrulamadım.
