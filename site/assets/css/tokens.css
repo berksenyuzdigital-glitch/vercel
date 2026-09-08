@@ -1,0 +1,40 @@
+/* Design tokens — extracted verbatim from the production build */
+:root {
+  /* Brand */
+  --c-brand-navy: #14151d;
+  --c-brand-gold: #b38c61;
+
+  /* Neutrals */
+  --c-dark-base: #424346;
+  --c-dark-brown: #6f6968;
+  --c-light-base: #eae8e8;
+  --c-light-beige: #d6d1d0;
+  --c-black: #000;
+  --c-white: #fff;
+
+  /* Alpha */
+  --c-dark-10: rgba(66, 67, 70, .1);
+  --c-dark-40: rgba(66, 67, 70, .4);
+
+  /* Feedback */
+  --c-error: #ff3c3c;
+
+  /* Type */
+  --font-instrument: "InstrumentSerif", Georgia, "Times New Roman", serif;
+  --font-inter: "InterTight", system-ui, -apple-system, "Segoe UI", sans-serif;
+
+  /* Rhythm */
+  --gutter: 1.25rem;
+  --section-y: clamp(4rem, 9vw, 9rem);
+  --maxw: 90rem;
+
+  /* Motion — strong curves, not the weak CSS built-ins */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.76, 0, 0.24, 1);
+  --dur-fast: 180ms;
+  --dur-base: 280ms;
+}
+
+@media (min-width: 1024px) {
+  :root { --gutter: 2.5rem; }
+}
