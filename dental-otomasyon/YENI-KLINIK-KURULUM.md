@@ -64,19 +64,60 @@ Tek telefon görüşmesinde toplanır:
 
 ### Adımlar
 
-| # | İş | Süre |
-|---|---|---|
-| 1 | Sheet şablonunu kopyala, adını `dental-randevu-KLINIKADI` yap, sekreterin Gmail'ine düzenleme yetkisi ver | 3 dk |
-| 2 | Kliniğin numarasını Meta'daki WABA'na ekle, doğrulama kodunu klinikten al | 10 dk |
-| 3 | `klinik.json` doldur, `python3 kur.py klinik.json` çalıştır | 5 dk |
-| 4 | `hazir/` içindeki 8 workflow'u n8n'e import et, credential'ları seç | 15 dk |
-| 5 | 07 hariç hepsinin Settings → Error Workflow alanına `Dental 07`yi seç | 3 dk |
-| 6 | Meta webhook URL'ini bu numara için ayarla, `messages` aboneliğini işaretle | 5 dk |
-| 7 | `node test/otomasyon-testi.mjs` + n8n içinde Aşama 2 testleri (`TEST.md`) | 10 dk |
-| 8 | Kendi numaranla gerçek uçtan uca test | 10 dk |
-| 9 | Kliniğin randevu formunu / Instagram lead formunu webhook'a bağla | 10 dk |
+Çoğu adım script'e bağlandı. Elle yapılacaklar sadece **onay/kimlik gerektiren** adımlar —
+Meta doğrulama kodu kliniğin telefonuna gelir, Google OAuth tarayıcıda onay ister; bunları
+hiçbir script atlayamaz.
 
-İlk klinikte bu 4-6 saat sürer çünkü öğreniyorsun. Üçüncü klinikte 45 dakika.
+**Bir kez (ilk klinikten önce):**
+
+```bash
+export META_TOKEN="EAAG..."      # Meta System User token
+export WABA_ID="1234567890"      # WhatsApp Business Account ID
+node araclar/meta-sablon-yukle.mjs        # 8 şablonu Meta'ya yükler
+node araclar/meta-sablon-yukle.mjs --durum # onay durumlarını listeler
+```
+
+Şablonlar WABA'ya bağlı olduğu için bu komutu ömründe bir kez çalıştırırsın;
+o hesaba eklediğin bütün klinik numaraları aynı şablonları kullanır.
+
+**Her klinik için:**
+
+```bash
+cp klinik.ornek.json klinik.json          # klinik bilgilerini doldur (2 dk)
+export N8N_URL="https://..." N8N_API_KEY="n8n_api_..."
+export WHATSAPP_TOKEN="EAAG..." GOOGLE_CREDENTIAL_ID="abc123"
+./kurulum.sh klinik.json
+```
+
+Bu tek komut şunları yapar: mantık testini koşar → ayarları 8 workflow'a işler →
+şablonları kontrol eder → workflow'ları n8n'e yükler → credential'ları bağlar →
+hata workflow'unu 7 akışa ayarlar → hepsini aktif eder.
+
+| # | İş | Kim yapıyor | Süre |
+|---|---|---|---|
+| 1 | `sablonlar/dental-randevu-sablonu.xlsx`'i Drive'a at, Sheets olarak aç | Sen (sürükle-bırak) | 1 dk |
+| 2 | Sekreterin Gmail'ine düzenleme yetkisi ver | Sen | 1 dk |
+| 3 | Kliniğin numarasını WABA'ya ekle, doğrulama kodunu klinikten al | **Elle — kod kliniğin telefonuna gelir** | 10 dk |
+| 4 | Google Sheets credential'ı (n8n'de bir kez, tarayıcıda OAuth onayı) | **Elle — ilk klinikte bir kez** | 3 dk |
+| 5 | `./kurulum.sh klinik.json` | Script | 2 dk |
+| 6 | Meta → Webhooks: URL + `messages` aboneliği | **Elle** | 5 dk |
+| 7 | `TEST.md` aşama 2 ve 3 | Sen | 20 dk |
+| 8 | Randevu formunu webhook'a bağla | Sen | 10 dk |
+
+Toplam **50 dakika**, bunun 35'i test ve doğrulama. Script'lerden önce bu iş 45-60 dakika
+tıklamaydı; şimdi tıklama 20 dakikaya indi, kalanı zaten atlamaman gereken test.
+
+### Neden geri kalanı otomatikleşmiyor
+
+| Adım | Neden elle |
+|---|---|
+| Meta işletme doğrulaması | Vergi levhası / imza sirküleri yüklüyorsun, API'si yok |
+| Numara doğrulama | Doğrulama kodu kliniğin telefonuna SMS/arama ile geliyor |
+| Google Sheets credential | OAuth onayı tarayıcıda "İzin ver" tıklaması istiyor |
+| Meta webhook URL'i | Business Manager arayüzünden, API'den ayarlanamıyor |
+
+Bunlar kimlik ve rıza kapıları — hiçbir script bunları atlayamaz, atlayabilseydi
+güvenlik açığı olurdu.
 
 ### Teslim: sekretere 10 dakikalık eğitim
 

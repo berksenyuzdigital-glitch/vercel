@@ -1,0 +1,61 @@
+{
+  "_aciklama": "Meta'ya yüklenecek 8 WhatsApp şablonu. Metinleri değiştirirsen workflow'daki parametre sırası da değişmeli; test/otomasyon-testi.mjs bunu kontrol ediyor.",
+  "sablonlar": [
+    {
+      "name": "dental_hosgeldin_randevu_teklif",
+      "category": "UTILITY",
+      "body": "Merhaba {{1}}, randevu talebiniz alındı. {{2}} tarihinde saat {{3}} veya {{4}} ön muayene için uygun mu? Onay için 1 yazmanız yeterli.",
+      "ornek": ["Mehmet Yılmaz", "11.03.2026", "11:00", "15:00"],
+      "kullanan": ["01", "Lead Normalize"]
+    },
+    {
+      "name": "dental_24h_hatirlatma",
+      "category": "UTILITY",
+      "body": "Merhaba {{1}}, {{2}} tarihinde saat {{3}} randevunuz var. Onaylıyor musunuz? 1: Evet, 2: İptal / Değişiklik",
+      "ornek": ["Mehmet Yılmaz", "11.03.2026", "11:00"],
+      "kullanan": ["02", "Yarınki Randevuları Seç"]
+    },
+    {
+      "name": "dental_2saat_konum",
+      "category": "UTILITY",
+      "body": "Merhaba {{1}}, saat {{2}} randevunuz için sizi bekliyoruz. Klinik konumumuz: {{3}}",
+      "ornek": ["Mehmet Yılmaz", "11:00", "https://maps.app.goo.gl/ornek"],
+      "kullanan": ["03", "2 Saat Kalanları Seç"]
+    },
+    {
+      "name": "dental_iptal_doldur",
+      "category": "UTILITY",
+      "body": "Merhaba {{1}}, {{2}} günü saat {{3}} için bir boşluk açıldı. Gelmek ister misiniz? Onay için 1 yazın, ilk yazan alır.",
+      "ornek": ["Ayşe Demir", "11.03.2026", "16:00"],
+      "kullanan": ["03", "Bekleme Listesini Seç"]
+    },
+    {
+      "name": "dental_yorum_istek",
+      "category": "UTILITY",
+      "body": "Merhaba {{1}}, bizi tercih ettiğiniz için teşekkür ederiz. Memnun kaldıysanız 1 dakikanızı ayırıp Google değerlendirmesi bırakır mısınız? {{2}}",
+      "ornek": ["Mehmet Yılmaz", "https://g.page/r/ornek/review"],
+      "kullanan": ["04", "Dün Gelenleri Seç"]
+    },
+    {
+      "name": "dental_bekleme_kayit",
+      "category": "UTILITY",
+      "body": "Merhaba {{1}}, bekleme listemize kaydınız alındı. Uygun bir randevu boşluğu açıldığında size buradan haber vereceğiz.",
+      "ornek": ["Ayşe Demir"],
+      "kullanan": ["06", "Kaydı Hazırla"]
+    },
+    {
+      "name": "dental_sistem_uyari",
+      "category": "UTILITY",
+      "body": "Sistem uyarısı: {{1}} akışı hata verdi. Node: {{2}}. Hata: {{3}}",
+      "ornek": ["Dental 02 - 24 Saat Önce Hatırlatma", "24s Hatırlatma Gönder", "Request failed with status code 400"],
+      "kullanan": ["07", "Hata Özeti"]
+    },
+    {
+      "name": "dental_gunluk_ozet",
+      "category": "UTILITY",
+      "body": "{{1}} özeti: Yarın {{2}} randevu var ({{3}} onaylı, {{4}} onay bekliyor). Bugün {{5}} hasta geldi, {{6}} gelmedi, {{7}} iptal oldu. {{8}} boş koltuk dolduruldu. Bekleme listesinde {{9}} kişi var.",
+      "ornek": ["11.03.2026", "12", "9", "3", "10", "2", "1", "1", "14"],
+      "kullanan": ["08", "Günü Hesapla"]
+    }
+  ]
+}

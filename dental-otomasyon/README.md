@@ -61,6 +61,21 @@ cp klinik.ornek.json klinik.json    # SHEET_ID, PHONE_NUMBER_ID, N8N_BASE_URL, l
 python3 kur.py klinik.json          # hazir/ klasörüne 8 workflow üretir
 ```
 
+Ya da tek komutla hepsi (şablon yükleme + n8n'e kurulum + aktif etme):
+
+```bash
+export META_TOKEN=... WABA_ID=... N8N_URL=... N8N_API_KEY=...
+./kurulum.sh klinik.json
+```
+
+| Araç | Ne yapar |
+|---|---|
+| `kur.py` | Klinik ayarlarını 8 workflow'a işler |
+| `araclar/meta-sablon-yukle.mjs` | 8 WhatsApp şablonunu Meta'ya yükler (`--durum` ile onay durumu) |
+| `araclar/n8n-yukle.mjs` | Workflow'ları n8n'e yükler, credential bağlar, hata akışını ayarlar, aktif eder |
+| `sablonlar/dental-randevu-sablonu.xlsx` | 3 sekmeli hazır Sheet — Drive'a atıp Sheets olarak aç |
+| `kurulum.sh` | Yukarıdakilerin hepsini sırayla çalıştırır |
+
 Script ayarları node isimlerine göre yazar (kör metin değiştirme yok), sonunda hâlâ
 doldurulmamış alan kaldıysa uyarır. Elle uğraşmak istersen her workflow'daki **Ayarlar**
 node'unda `BURAYA_...` yazan alanları değiştirmek de yeterli.

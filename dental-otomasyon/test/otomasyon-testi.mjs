@@ -202,6 +202,19 @@ const devir = hastaYazdi('905321112233', 'dişim ağrıyor fiyat nedir', t);
 mesajYaz(devir.wa);
 kontrol(devir.islem === 'devir' && !devir.ID, 'Serbest metin hiçbir kaydı bozmadan sekretere yönlendirildi');
 
+adim('12) Şablon metinleri ile workflow kodu uyuşuyor mu?');
+// Meta'nın 132000 hatası tam olarak burada doğar: şablondaki {{n}} sayısı ile
+// kodun gönderdiği parametre sayısı farklıysa mesaj hiç gitmez.
+const tanimlar = JSON.parse(fs.readFileSync(path.join(KOK, 'araclar/sablon-tanimlari.json'), 'utf8')).sablonlar;
+for (const s of tanimlar) {
+  const kaynak = kod(s.kullanan[0], s.kullanan[1]);
+  const sablondaki = new Set([...s.body.matchAll(/\{\{(\d+)\}\}/g)].map((m) => m[1])).size;
+  const koddaki = (kaynak.match(/type: 'text'/g) || []).length;
+  const adGeciyor = kaynak.includes(`name: '${s.name}'`);
+  kontrol(adGeciyor && sablondaki === koddaki && sablondaki === s.ornek.length,
+    `${s.name}: şablon ${sablondaki} değişken, kod ${koddaki} parametre, örnek ${s.ornek.length} adet`);
+}
+
 /* ================= SONUÇ ================= */
 
 adim('DEFTERİN SON HALİ');
