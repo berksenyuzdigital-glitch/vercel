@@ -1,261 +1,218 @@
-/* ============================================================
-   Şenyüz Estate — scroll ile sürülen video arka planı
-   Video daima sessizdir: muted açık, ses hiçbir yerde açılmaz.
-   ============================================================ */
+/* ==========================================================
+   Şenyüz Estate
+
+   Film: kaydırma ilerlemesi doğrudan video.currentTime'a
+   bağlanır. Ekranda hiçbir oynatıcı arayüzü yoktur; görüntü
+   ilerlemenin %82'sine kadar tamamen çıplak kalır, sonra
+   perde ve olta cümlesi belirir.
+
+   Video her koşulda sessizdir: kaynak dosyada ses izi yok,
+   muted açık ve volume sıfırda kilitli.
+   ========================================================== */
 (() => {
   'use strict';
 
-  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  const clamp = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
-  const lerp = (a, b, t) => a + (b - a) * t;
+  const az = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const kis = (v, a = 0, b = 1) => Math.min(b, Math.max(a, v));
+  const ara = (a, b, t) => a + (b - a) * t;
 
-  /* ---------- 1. Video scrub ---------- */
-  const scrolly = document.getElementById('scrolly');
-  const stage = document.getElementById('stage');
-  const media = document.getElementById('stageMedia');
-  const video = document.getElementById('heroVideo');
-  const fill = document.getElementById('scrubFill');
-  const pct = document.getElementById('scrubPct');
-  const cue = document.getElementById('scrollCue');
-  const glow = document.getElementById('stageGlow');
-  const steps = Array.from(document.querySelectorAll('.step'));
+  /* ---------- film ---------- */
+  const film = document.getElementById('film');
+  const sahne = film.querySelector('.film__stage');
+  const kap = document.getElementById('filmMedia');
+  const video = document.getElementById('film-video');
+  const perde = document.getElementById('filmScrim');
+  const olta = document.getElementById('hook');
 
-  // Sessizliği kodla da garanti altına al (bazı tarayıcılar attribute'u geç uygular).
+  // Görüntünün çıplak kaldığı bölüm: ilerlemenin %82'si.
+  const FILM_SONU = 0.82;
+  // Olta bu aralıkta belirir, kalan pay tutma süresidir.
+  const OLTA_BAS = 0.80;
+  const OLTA_BIT = 0.93;
+
   video.muted = true;
   video.volume = 0;
   video.defaultMuted = true;
-  video.setAttribute('muted', '');
   video.addEventListener('volumechange', () => {
     if (!video.muted || video.volume !== 0) { video.muted = true; video.volume = 0; }
   });
 
-  let duration = 0;
-  let targetTime = 0;
-  let shownTime = 0;
-  let seeking = false;
-  let lastSeekAt = 0;
-  let ticking = false;
-  let progress = 0;
+  let sure = 0;
+  let hedef = 0;
+  let gosterilen = 0;
+  let sariyor = false;
+  let sonSarma = 0;
+  let bekleyen = false;
 
-  // Süre bazı tarayıcılarda metadata anında Infinity gelebilir; her fırsatta tazele.
-  function syncDuration() {
+  function sureyiTazele() {
     const d = video.duration;
-    if (Number.isFinite(d) && d > 0 && d !== duration) {
-      duration = d;
-      update(true);
-      return true;
-    }
+    if (Number.isFinite(d) && d > 0 && d !== sure) { sure = d; guncelle(true); return true; }
     return false;
   }
 
-  const onMeta = () => {
-    syncDuration();
-    // İlk kareyi boyayabilmek için kısa bir sessiz oynatma denemesi yap.
-    const kick = video.play();
-    if (kick && typeof kick.then === 'function') {
-      kick.then(() => video.pause()).catch(() => { /* otomatik oynatma engellendi: scrub yine çalışır */ });
-    } else {
-      video.pause();
-    }
-    update(true);
-  };
-
-  if (video.readyState >= 1) onMeta();
-  else video.addEventListener('loadedmetadata', onMeta, { once: true });
-  ['durationchange', 'canplay', 'loadeddata', 'progress'].forEach((ev) =>
-    video.addEventListener(ev, syncDuration));
-
-  video.addEventListener('seeked', () => { seeking = false; });
-  video.addEventListener('error', () => {
-    stage.classList.add('has-error');
-    if (cue) cue.style.display = 'none';
-  });
-
-  function computeProgress() {
-    const rect = scrolly.getBoundingClientRect();
-    const travel = scrolly.offsetHeight - window.innerHeight;
-    return travel > 0 ? clamp(-rect.top / travel) : 0;
+  function baslat() {
+    sureyiTazele();
+    // İlk kareyi boyatmak için kısa, sessiz bir oynatma denemesi.
+    const p = video.play();
+    if (p && typeof p.then === 'function') p.then(() => video.pause()).catch(() => {});
+    else video.pause();
+    guncelle(true);
   }
 
-  function paintUI(p) {
-    if (fill) fill.style.width = (p * 100).toFixed(2) + '%';
-    if (pct) pct.textContent = '%' + Math.round(p * 100);
-    if (cue) cue.classList.toggle('is-hidden', p > 0.04);
+  if (video.readyState >= 1) baslat();
+  else video.addEventListener('loadedmetadata', baslat, { once: true });
+  ['durationchange', 'canplay', 'loadeddata', 'progress'].forEach((e) =>
+    video.addEventListener(e, sureyiTazele));
+  video.addEventListener('seeked', () => { sariyor = false; });
 
-    const idx = p < 0.34 ? 0 : p < 0.68 ? 1 : 2;
-    steps.forEach((s, i) => s.classList.toggle('is-active', i === idx));
+  function ilerleme() {
+    const r = film.getBoundingClientRect();
+    const yol = film.offsetHeight - window.innerHeight;
+    return yol > 0 ? kis(-r.top / yol) : 0;
   }
 
-  function update(immediate) {
-    progress = computeProgress();
-    paintUI(progress);
-    if (duration === 0 && video.readyState >= 1) syncDuration();
-    if (duration > 0) {
-      // Son kareye takılmamak için küçük bir pay bırak.
-      targetTime = progress * (duration - 0.05);
-      if (immediate || reduceMotion) {
-        shownTime = targetTime;
-        applyTime(shownTime);
-      }
+  function boya(p) {
+    const o = kis((p - OLTA_BAS) / (OLTA_BIT - OLTA_BAS));
+    // yumuşak giriş, son karelerde tam okunurluk
+    const e = o * o * (3 - 2 * o);
+    perde.style.opacity = e.toFixed(3);
+    olta.style.opacity = e.toFixed(3);
+    olta.style.transform = `translateY(${((1 - e) * 22).toFixed(1)}px)`;
+  }
+
+  function guncelle(hemen) {
+    const p = ilerleme();
+    boya(p);
+    if (sure === 0 && video.readyState >= 1) sureyiTazele();
+    if (sure > 0) {
+      hedef = kis(p / FILM_SONU) * (sure - 0.05);
+      if (hemen || az) { gosterilen = hedef; uygula(gosterilen); }
     }
   }
 
-  function applyTime(t) {
-    // 'seeked' olayı hiç gelmezse (ağ/codec aksaklığı) kilidi 600 ms sonra aç.
-    if (seeking && performance.now() - lastSeekAt > 600) seeking = false;
-    if (seeking || video.readyState < 1) return;
+  function uygula(t) {
+    if (sariyor && performance.now() - sonSarma > 600) sariyor = false;
+    if (sariyor || video.readyState < 1) return;
     if (Math.abs(video.currentTime - t) < 0.015) return;
-    seeking = true;
-    lastSeekAt = performance.now();
-    try { video.currentTime = t; } catch (e) { seeking = false; }
+    sariyor = true;
+    sonSarma = performance.now();
+    try { video.currentTime = t; } catch (e) { sariyor = false; }
   }
 
-  function onScroll() {
-    if (ticking) return;
-    ticking = true;
-    requestAnimationFrame(() => { update(reduceMotion); ticking = false; });
-  }
+  window.addEventListener('scroll', () => {
+    if (bekleyen) return;
+    bekleyen = true;
+    requestAnimationFrame(() => { guncelle(az); bekleyen = false; });
+  }, { passive: true });
+  window.addEventListener('resize', () => guncelle(true));
 
-  window.addEventListener('scroll', onScroll, { passive: true });
-  window.addEventListener('resize', () => update(true));
-
-  // Yumuşatma döngüsü: hedef zamana kayarak yaklaş, böylece scroll sıçramaları akışkan görünür.
-  if (!reduceMotion) {
-    const loop = () => {
-      if (duration > 0) {
-        shownTime = lerp(shownTime, targetTime, 0.14);
-        if (Math.abs(shownTime - targetTime) < 0.004) shownTime = targetTime;
-        applyTime(shownTime);
+  if (!az) {
+    const dongu = () => {
+      if (sure > 0) {
+        gosterilen = ara(gosterilen, hedef, 0.14);
+        if (Math.abs(gosterilen - hedef) < 0.004) gosterilen = hedef;
+        uygula(gosterilen);
       }
-      requestAnimationFrame(loop);
+      requestAnimationFrame(dongu);
     };
-    requestAnimationFrame(loop);
+    requestAnimationFrame(dongu);
   }
 
-  /* ---------- 2. Fareye duyarlı parallax ---------- */
-  if (!reduceMotion && window.matchMedia('(hover: hover)').matches) {
-    let mx = 0, my = 0, cx = 0, cy = 0, pointerOn = false;
-
-    stage.addEventListener('pointermove', (e) => {
-      const r = stage.getBoundingClientRect();
-      mx = (e.clientX - r.left) / r.width - 0.5;
-      my = (e.clientY - r.top) / r.height - 0.5;
-      pointerOn = true;
-      if (glow) { glow.style.left = (e.clientX - r.left) + 'px'; glow.style.top = (e.clientY - r.top) + 'px'; }
+  /* ---------- fareye duyarlı kayma ---------- */
+  if (!az && window.matchMedia('(hover: hover)').matches) {
+    let hx = 0, hy = 0, sx = 0, sy = 0;
+    sahne.addEventListener('pointermove', (e) => {
+      const r = sahne.getBoundingClientRect();
+      hx = (e.clientX - r.left) / r.width - 0.5;
+      hy = (e.clientY - r.top) / r.height - 0.5;
     });
-    stage.addEventListener('pointerleave', () => { mx = 0; my = 0; pointerOn = false; });
-
-    const parallax = () => {
-      cx = lerp(cx, mx, 0.07);
-      cy = lerp(cy, my, 0.07);
-      media.style.transform = `translate3d(${(-cx * 26).toFixed(2)}px, ${(-cy * 20).toFixed(2)}px, 0)`;
-      requestAnimationFrame(parallax);
+    sahne.addEventListener('pointerleave', () => { hx = 0; hy = 0; });
+    const kay = () => {
+      sx = ara(sx, hx, 0.06); sy = ara(sy, hy, 0.06);
+      kap.style.transform = `translate3d(${(-sx * 22).toFixed(2)}px,${(-sy * 16).toFixed(2)}px,0)`;
+      requestAnimationFrame(kay);
     };
-    requestAnimationFrame(parallax);
-
-    // Kartlarda hafif eğim
-    document.querySelectorAll('[data-tilt]').forEach((card) => {
-      card.addEventListener('pointermove', (e) => {
-        const r = card.getBoundingClientRect();
-        const dx = (e.clientX - r.left) / r.width - 0.5;
-        const dy = (e.clientY - r.top) / r.height - 0.5;
-        card.style.transform = `perspective(900px) rotateX(${(-dy * 4).toFixed(2)}deg) rotateY(${(dx * 5).toFixed(2)}deg) translateY(-6px)`;
-      });
-      card.addEventListener('pointerleave', () => { card.style.transform = ''; });
-    });
+    requestAnimationFrame(kay);
   }
 
-  /* ---------- 3. Navigasyon ---------- */
-  const nav = document.getElementById('nav');
-  const toggle = document.getElementById('navToggle');
-  const mobile = document.getElementById('navMobile');
+  /* ---------- üst künye ---------- */
+  const kunye = document.getElementById('masthead');
+  // Film ekranı terk edene kadar künye görüntünün üstünde açık renkte kalır.
+  const gecis = () => kunye.classList.toggle('is-past', film.getBoundingClientRect().bottom <= 72);
+  window.addEventListener('scroll', gecis, { passive: true });
+  gecis();
 
-  const onNavScroll = () => nav.classList.toggle('is-stuck', window.scrollY > 40);
-  window.addEventListener('scroll', onNavScroll, { passive: true });
-  onNavScroll();
-
-  toggle.addEventListener('click', () => {
-    const open = toggle.getAttribute('aria-expanded') === 'true';
-    toggle.setAttribute('aria-expanded', String(!open));
-    toggle.setAttribute('aria-label', open ? 'Menüyü aç' : 'Menüyü kapat');
-    mobile.hidden = open;
+  const burger = document.getElementById('burger');
+  const cekmece = document.getElementById('drawer');
+  burger.addEventListener('click', () => {
+    const acik = burger.getAttribute('aria-expanded') === 'true';
+    burger.setAttribute('aria-expanded', String(!acik));
+    burger.setAttribute('aria-label', acik ? 'Menüyü aç' : 'Menüyü kapat');
+    cekmece.hidden = acik;
+    kunye.classList.toggle('is-open', !acik);
   });
-  mobile.addEventListener('click', (e) => {
-    if (e.target.tagName === 'A') {
-      mobile.hidden = true;
-      toggle.setAttribute('aria-expanded', 'false');
-    }
+  cekmece.addEventListener('click', (e) => {
+    if (e.target.tagName !== 'A') return;
+    cekmece.hidden = true;
+    burger.setAttribute('aria-expanded', 'false');
+    kunye.classList.remove('is-open');
   });
 
-  /* ---------- 4. Görünüme girince açılan bloklar + sayaçlar ---------- */
-  const revealables = document.querySelectorAll('.reveal');
-  if ('IntersectionObserver' in window && !reduceMotion) {
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        entry.target.classList.add('is-in');
-        const counter = entry.target.querySelector('[data-count]');
-        if (counter) countUp(counter);
-        io.unobserve(entry.target);
+  /* ---------- görünüme girenler ---------- */
+  const gorunecek = document.querySelectorAll('.reveal');
+  if ('IntersectionObserver' in window && !az) {
+    const io = new IntersectionObserver((girisler) => {
+      girisler.forEach((g) => {
+        if (!g.isIntersecting) return;
+        g.target.classList.add('in');
+        io.unobserve(g.target);
       });
-    }, { rootMargin: '0px 0px -12% 0px', threshold: 0.15 });
-    revealables.forEach((el) => io.observe(el));
+    }, { rootMargin: '0px 0px -10% 0px', threshold: 0.12 });
+    gorunecek.forEach((el) => io.observe(el));
+    // Gözlemci bir nedenle çalışmazsa ekranda olan hiçbir şey gizli kalmasın.
+    setTimeout(() => {
+      document.querySelectorAll('.reveal:not(.in)').forEach((el) => {
+        if (el.getBoundingClientRect().top < window.innerHeight) el.classList.add('in');
+      });
+    }, 1600);
   } else {
-    revealables.forEach((el) => {
-      el.classList.add('is-in');
-      const counter = el.querySelector('[data-count]');
-      if (counter) counter.textContent = counter.dataset.count.replace('.', ',') + (counter.dataset.suffix || '');
-    });
+    gorunecek.forEach((el) => el.classList.add('in'));
   }
 
-  function countUp(el) {
-    const end = parseFloat(el.dataset.count);
-    const suffix = el.dataset.suffix || '';
-    const decimals = (el.dataset.count.split('.')[1] || '').length;
-    const dur = 1400;
-    const t0 = performance.now();
-    const fmt = (n) => n.toLocaleString('tr-TR', { minimumFractionDigits: decimals, maximumFractionDigits: decimals });
-    const tick = (now) => {
-      const p = clamp((now - t0) / dur);
-      const eased = 1 - Math.pow(1 - p, 3);
-      el.textContent = fmt(end * eased) + suffix;
-      if (p < 1) requestAnimationFrame(tick);
-    };
-    requestAnimationFrame(tick);
-  }
-
-  /* ---------- 5. Menüde aktif bölüm ---------- */
-  const sections = ['portfoy', 'yaklasim', 'rakamlar', 'iletisim']
+  /* ---------- menüde bulunulan bölüm ---------- */
+  const bolumler = ['neden', 'ev', 'portfoy', 'iletisim']
     .map((id) => document.getElementById(id)).filter(Boolean);
-  const links = Array.from(document.querySelectorAll('.nav__links a'));
-  if ('IntersectionObserver' in window && sections.length) {
-    const so = new IntersectionObserver((entries) => {
-      entries.forEach((entry) => {
-        if (!entry.isIntersecting) return;
-        links.forEach((a) => a.classList.toggle('is-current', a.getAttribute('href') === '#' + entry.target.id));
+  const baglar = Array.from(document.querySelectorAll('.masthead__nav a'));
+  if ('IntersectionObserver' in window && bolumler.length) {
+    const so = new IntersectionObserver((girisler) => {
+      girisler.forEach((g) => {
+        if (!g.isIntersecting) return;
+        baglar.forEach((a) => a.classList.toggle('on', a.getAttribute('href') === '#' + g.target.id));
       });
     }, { rootMargin: '-45% 0px -50% 0px' });
-    sections.forEach((s) => so.observe(s));
+    bolumler.forEach((b) => so.observe(b));
   }
 
-  /* ---------- 6. İletişim formu ---------- */
-  const form = document.getElementById('contactForm');
-  const status = document.getElementById('formStatus');
+  /* ---------- talep formu ---------- */
+  const form = document.getElementById('form');
+  const durum = document.getElementById('stat');
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    const ad = form.ad, eposta = form.eposta;
-    const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(eposta.value.trim());
-    ad.classList.toggle('is-invalid', !ad.value.trim());
-    eposta.classList.toggle('is-invalid', !emailOk);
+    const ad = form.ad, mail = form.mail;
+    const mailUygun = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(mail.value.trim());
+    ad.classList.toggle('bad', !ad.value.trim());
+    mail.classList.toggle('bad', !mailUygun);
 
-    if (!ad.value.trim() || !emailOk) {
-      status.textContent = 'Lütfen adınızı ve geçerli bir e-posta adresini girin.';
-      status.className = 'form__status is-error';
-      (!ad.value.trim() ? ad : eposta).focus();
+    if (!ad.value.trim() || !mailUygun) {
+      durum.textContent = !ad.value.trim()
+        ? 'Adınızı yazın.'
+        : 'E-posta adresi eksik ya da hatalı görünüyor.';
+      durum.className = 'stat bad';
+      (!ad.value.trim() ? ad : mail).focus();
       return;
     }
-    status.textContent = 'Teşekkürler ' + ad.value.trim().split(' ')[0] + '. Talebiniz alındı, 24 saat içinde dönüş yapacağız.';
-    status.className = 'form__status is-ok';
+    durum.textContent = 'Aldık. ' + ad.value.trim().split(' ')[0] + ', bugün içinde dönüyoruz.';
+    durum.className = 'stat ok';
     form.reset();
   });
 

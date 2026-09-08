@@ -1,25 +1,27 @@
-# Şenyüz Estate — scroll ile oynayan video arka planlı gayrimenkul sitesi
+# Şenyüz Estate
 
 Statik site. Derleme adımı yok: `index.html` + `assets/`.
 
-## Öne çıkan özellik: scroll'a bağlı video
+## Film
 
-Hero bölümü 420vh yüksekliğinde bir "scrollytelling" alanı. Sayfa kaydırıldıkça
-video **oynatılmaz, sürülür**: kaydırma ilerlemesi doğrudan `video.currentTime`
-değerine eşlenir. Geri kaydırınca video geri sarar.
+Açılış, kaydırmayla sürülen bir film. Video **oynatılmaz, sarılır**: kaydırma
+ilerlemesi doğrudan `video.currentTime` değerine eşlenir, geri kaydırınca
+görüntü geri sarar.
 
-- `assets/js/main.js` içinde ilerleme → hedef zaman eşlemesi yapılır, `requestAnimationFrame`
-  döngüsünde lerp ile yumuşatılır; böylece kaydırma sıçramaları akıcı görünür.
-- Video **her koşulda sessizdir**: kaynak dosyadan ses izi tamamen çıkarıldı, ayrıca
-  `muted` özniteliği + JS'te `volume = 0` ve `volumechange` koruması var.
-- Fare hareketi hero'da hafif parallax ve imleci takip eden ışık huzmesi üretir;
-  kartlarda 3B eğim verir.
-- `prefers-reduced-motion: reduce` seçili kullanıcıda yumuşatma ve parallax kapanır,
-  video yalnızca kaydırmayla adım adım ilerler.
+Ekranda hiçbir oynatıcı arayüzü yoktur — ilerleme çubuğu, yüzde, "kaydırın"
+ipucu ya da sessizlik rozeti yok. Görüntü, ilerlemenin **%82'sine kadar
+tamamen çıplak** kalır; perde ve olta cümlesi yalnızca son karelerde belirir
+(`FILM_SONU`, `OLTA_BAS`, `OLTA_BIT` sabitleri `assets/js/main.js` başında).
+
+Video her koşulda sessizdir: kaynak dosyada ses izi yok, `muted` açık ve
+`volumechange` dinleyicisi sesi sıfırda kilitliyor.
+
+`prefers-reduced-motion: reduce` seçili kullanıcıda yumuşatma ve fare kayması
+kapanır; film yalnızca kaydırmayla adım adım ilerler.
 
 ## Video hazırlığı
 
-Kaynak video scrub için yeniden kodlandı (ffmpeg):
+Kaynak video sarma için yeniden kodlandı (ffmpeg):
 
 ```
 ffmpeg -i kaynak.mp4 -an \
@@ -29,16 +31,23 @@ ffmpeg -i kaynak.mp4 -an \
 ```
 
 - `-an`: ses izi tamamen silinir.
-- `-g 6`: her 6 karede bir keyframe → geri/ileri sarma anında kare bulur, scrub akıcı olur.
-- `-movflags +faststart`: metadata başa alınır, video anında oynatılabilir.
+- `-g 6`: her 6 karede bir keyframe → sarma anında kare bulur, akıcı olur.
+- `-movflags +faststart`: metadata başa alınır.
 
-Portföy kartlarındaki görseller ve `assets/video/poster.jpg` aynı videodan alınan karelerdir.
+`assets/img/mulk-*.jpg` ve `assets/video/poster.jpg` aynı filmden alınan
+karelerdir; bölümdeki zaman kodları bu karelerin gerçek saniyeleridir.
+
+## Tipografi
+
+Archivo (değişken: genişlik + kalınlık) ve IBM Plex Mono, `assets/fonts/`
+altında kendi sunucumuzdan servis edilir — latin + latin-ext alt kümeleri,
+Türkçe glifler dahil. Dışarıya hiçbir istek gitmez.
 
 ## Yerelde çalıştırma
 
-`index.html` dosyasına çift tıklamayın: `file://` üzerinden video sarma çalışmaz.
-Ayrıca sunucunun **Range (206)** isteklerini desteklemesi gerekir —
-`python3 -m http.server` bunu desteklemez, video ilk karede takılır.
+`index.html` dosyasına çift tıklamayın: `file://` üzerinden video sarma
+çalışmaz. Sunucunun **Range (206)** isteklerini desteklemesi de gerekir —
+`python3 -m http.server` desteklemez, film ilk karede takılır.
 
 Depoda hazır gelen sunucuyu kullanın (kurulum gerektirmez):
 
@@ -47,9 +56,7 @@ python3 sunucu.py
 # http://localhost:8000
 ```
 
-Farklı port için: `python3 sunucu.py 3000`
-
-Node tarafını tercih ederseniz `npx serve .` de Range destekler.
+Farklı port için: `python3 sunucu.py 3000`. Node tarafında `npx serve .` de olur.
 
 ## Yayın
 
