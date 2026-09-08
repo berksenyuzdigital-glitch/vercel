@@ -36,12 +36,20 @@ Portföy kartlarındaki görseller ve `assets/video/poster.jpg` aynı videodan a
 
 ## Yerelde çalıştırma
 
-Video'yu sarabilmek için sunucunun **Range (206)** isteklerini desteklemesi gerekir.
-`python3 -m http.server` bunu desteklemez; video ilk karede takılır.
+`index.html` dosyasına çift tıklamayın: `file://` üzerinden video sarma çalışmaz.
+Ayrıca sunucunun **Range (206)** isteklerini desteklemesi gerekir —
+`python3 -m http.server` bunu desteklemez, video ilk karede takılır.
+
+Depoda hazır gelen sunucuyu kullanın (kurulum gerektirmez):
 
 ```
-npx serve .
+python3 sunucu.py
+# http://localhost:8000
 ```
+
+Farklı port için: `python3 sunucu.py 3000`
+
+Node tarafını tercih ederseniz `npx serve .` de Range destekler.
 
 ## Yayın
 
