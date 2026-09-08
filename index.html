@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Şenyüz Estate — Ayrıcalıklı Yaşam Alanları</title>
+<meta name="description" content="Şenyüz Estate: Bodrum, Çeşme ve İstanbul'da mimari değeri yüksek villa ve rezidanslar. Özel portföy, uçtan uca danışmanlık." />
+<meta name="theme-color" content="#0b0d0c" />
+<meta property="og:title" content="Şenyüz Estate — Ayrıcalıklı Yaşam Alanları" />
+<meta property="og:description" content="Mimari değeri yüksek villa ve rezidanslardan oluşan özel portföy." />
+<meta property="og:type" content="website" />
+<link rel="preload" as="image" href="assets/video/poster.jpg" />
+<link rel="preload" as="video" href="assets/video/villa.mp4" type="video/mp4" />
+<link rel="stylesheet" href="assets/css/style.css" />
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'><rect width='32' height='32' rx='7' fill='%230b0d0c'/><path d='M6 20 16 9l10 11v4H6z' fill='none' stroke='%23c8a86b' stroke-width='2'/></svg>" />
+</head>
+<body>
+
+<a class="skip-link" href="#portfoy">İçeriğe geç</a>
+
+<header class="nav" id="nav">
+  <div class="nav__inner">
+    <a class="brand" href="#top" aria-label="Şenyüz Estate ana sayfa">
+      <span class="brand__mark" aria-hidden="true"></span>
+      <span class="brand__text">ŞENYÜZ<em>ESTATE</em></span>
+    </a>
+    <nav class="nav__links" aria-label="Ana menü">
+      <a href="#portfoy">Portföy</a>
+      <a href="#yaklasim">Yaklaşım</a>
+      <a href="#rakamlar">Rakamlar</a>
+      <a href="#iletisim">İletişim</a>
+    </nav>
+    <a class="btn btn--ghost nav__cta" href="#iletisim">Randevu Al</a>
+    <button class="nav__toggle" id="navToggle" aria-expanded="false" aria-controls="navMobile" aria-label="Menüyü aç">
+      <span></span><span></span>
+    </button>
+  </div>
+  <div class="nav__mobile" id="navMobile" hidden>
+    <a href="#portfoy">Portföy</a>
+    <a href="#yaklasim">Yaklaşım</a>
+    <a href="#rakamlar">Rakamlar</a>
+    <a href="#iletisim">İletişim</a>
+  </div>
+</header>
+
+<!-- ============ SCROLL İLE OYNAYAN VİDEO SAHNESİ ============ -->
+<main id="top">
+<section class="scrolly" id="scrolly" aria-label="Tanıtım">
+  <div class="stage" id="stage">
+    <div class="stage__media" id="stageMedia">
+      <video
+        id="heroVideo"
+        class="stage__video"
+        src="assets/video/villa.mp4"
+        poster="assets/video/poster.jpg"
+        muted
+        playsinline
+        webkit-playsinline
+        preload="auto"
+        disablepictureinpicture
+        disableremoteplayback
+        aria-hidden="true"
+        tabindex="-1"></video>
+      <div class="stage__grain" aria-hidden="true"></div>
+      <div class="stage__veil" aria-hidden="true"></div>
+      <div class="stage__glow" id="stageGlow" aria-hidden="true"></div>
+    </div>
+
+    <div class="stage__content">
+      <article class="step is-active" data-step="0">
+        <p class="eyebrow">Bodrum · Yalıkavak</p>
+        <h1 class="display">Denize bakan<br /><em>mimari bir imza</em></h1>
+        <p class="lede">Kaydırın — villa, siz ilerledikçe gözlerinizin önünde açılsın.</p>
+      </article>
+
+      <article class="step" data-step="1">
+        <p class="eyebrow">1.240 m² arsa · 6 yatak odası</p>
+        <h2 class="display">Sonsuzluk havuzu ve<br /><em>240° panorama</em></h2>
+        <p class="lede">Her kat, ufuk çizgisini bozmayacak şekilde araziye gömülerek konumlandırıldı.</p>
+      </article>
+
+      <article class="step" data-step="2">
+        <p class="eyebrow">Anahtar teslim · 2026 girişli</p>
+        <h2 class="display">Yaşamaya hazır,<br /><em>beklemeye değmez</em></h2>
+        <p class="lede">Portföyün tamamı özel görüşme ile sunulur.</p>
+        <a class="btn btn--solid" href="#portfoy">Portföyü Gör</a>
+      </article>
+    </div>
+
+    <div class="stage__hud" aria-hidden="true">
+      <div class="hud__scrub"><span id="scrubFill"></span></div>
+      <div class="hud__meta">
+        <span class="hud__mute">
+          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5 6 9H2v6h4l5 4z"/><path d="m22 9-6 6M16 9l6 6"/></svg>
+          SESSİZ
+        </span>
+        <span id="scrubPct">%0</span>
+        <span>KAYDIRARAK İZLE</span>
+      </div>
+    </div>
+
+    <div class="stage__cue" id="scrollCue" aria-hidden="true">
+      <span class="cue__line"></span>
+      <span class="cue__text">SCROLL</span>
+    </div>
+
+  </div>
+</section>
+
+<!-- ============ PORTFÖY ============ -->
+<section class="section" id="portfoy">
+  <div class="wrap">
+    <header class="section__head reveal">
+      <p class="eyebrow">Seçili Portföy</p>
+      <h2 class="title">Az sayıda, doğru mülk</h2>
+      <p class="section__lede">Yılda yalnızca on iki mülk listeliyoruz. Her biri konum, mimar ve getiri açısından bağımsız olarak inceleniyor.</p>
+    </header>
+
+    <div class="grid">
+      <article class="card reveal" data-tilt>
+        <img class="card__art" src="assets/img/mulk-1.jpg" alt="Villa Meridian — Yalıkavak, Bodrum'da modern villanın dış cephesi" loading="lazy" decoding="async" width="880" height="495" />
+        <div class="card__body">
+          <p class="card__tag">Yalıkavak, Bodrum</p>
+          <h3 class="card__title">Villa Meridian</h3>
+          <ul class="card__specs"><li>6 Oda</li><li>640 m²</li><li>Deniz Manzarası</li></ul>
+          <p class="card__price">€ 4.850.000</p>
+        </div>
+      </article>
+
+      <article class="card reveal" data-tilt>
+        <img class="card__art" src="assets/img/mulk-2.jpg" alt="Villa Solis — Alaçatı'da havuzlu modern villanın bahçe cephesi" loading="lazy" decoding="async" width="880" height="495" />
+        <div class="card__body">
+          <p class="card__tag">Alaçatı, Çeşme</p>
+          <h3 class="card__title">Villa Solis</h3>
+          <ul class="card__specs"><li>4 Oda</li><li>310 m²</li><li>Havuzlu</li></ul>
+          <p class="card__price">€ 1.960.000</p>
+        </div>
+      </article>
+
+      <article class="card reveal" data-tilt>
+        <img class="card__art" src="assets/img/mulk-3.jpg" alt="Boğaz Rezidans — Bebek'te geniş salon ve panoramik cam cephe" loading="lazy" decoding="async" width="880" height="495" />
+        <div class="card__body">
+          <p class="card__tag">Bebek, İstanbul</p>
+          <h3 class="card__title">Boğaz Rezidans</h3>
+          <ul class="card__specs"><li>3 Oda</li><li>245 m²</li><li>Boğaz Cephe</li></ul>
+          <p class="card__price">€ 3.400.000</p>
+        </div>
+      </article>
+
+      <article class="card reveal" data-tilt>
+        <img class="card__art" src="assets/img/mulk-4.jpg" alt="Marina Loft — Göcek'te açık mutfak ve yemek alanı" loading="lazy" decoding="async" width="880" height="495" />
+        <div class="card__body">
+          <p class="card__tag">Göcek, Fethiye</p>
+          <h3 class="card__title">Marina Loft</h3>
+          <ul class="card__specs"><li>2 Oda</li><li>180 m²</li><li>İskele Hakkı</li></ul>
+          <p class="card__price">€ 1.250.000</p>
+        </div>
+      </article>
+
+      <article class="card reveal" data-tilt>
+        <img class="card__art" src="assets/img/mulk-5.jpg" alt="Cliff House — Kalkan'da havuza bakan ana yatak odası" loading="lazy" decoding="async" width="880" height="495" />
+        <div class="card__body">
+          <p class="card__tag">Kalkan, Antalya</p>
+          <h3 class="card__title">Cliff House</h3>
+          <ul class="card__specs"><li>5 Oda</li><li>420 m²</li><li>Sonsuzluk Havuzu</li></ul>
+          <p class="card__price">€ 2.700.000</p>
+        </div>
+      </article>
+
+      <article class="card reveal" data-tilt>
+        <img class="card__art" src="assets/img/mulk-6.jpg" alt="Orman Villa — Zekeriyaköy'de geniş ana yatak odası" loading="lazy" decoding="async" width="880" height="495" />
+        <div class="card__body">
+          <p class="card__tag">Zekeriyaköy, İstanbul</p>
+          <h3 class="card__title">Orman Villa</h3>
+          <ul class="card__specs"><li>7 Oda</li><li>780 m²</li><li>Özel Bahçe</li></ul>
+          <p class="card__price">€ 3.100.000</p>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ============ YAKLAŞIM ============ -->
+<section class="section section--split" id="yaklasim">
+  <div class="wrap split">
+    <div class="split__text reveal">
+      <p class="eyebrow">Yaklaşımımız</p>
+      <h2 class="title">Aracı değil, danışman</h2>
+      <p class="section__lede">İlk görüşmeden tapu devrine kadar tek bir ekip sizinle kalır. Değerleme, hukuki denetim, kredi yapılandırması ve teslim sonrası yönetim aynı çatı altında.</p>
+      <ol class="steps">
+        <li><span>01</span><div><h3>Keşif</h3><p>İhtiyaç, bütçe ve kullanım senaryonuzu netleştiriyoruz.</p></div></li>
+        <li><span>02</span><div><h3>Kısa Liste</h3><p>Yüzlerce mülkü eleyip size yalnızca üç seçenek sunuyoruz.</p></div></li>
+        <li><span>03</span><div><h3>Denetim</h3><p>İmar, tapu ve yapı denetimi bağımsız uzmanlarca raporlanır.</p></div></li>
+        <li><span>04</span><div><h3>Devir</h3><p>Sözleşme, ödeme ve teslim süreci uçtan uca yönetilir.</p></div></li>
+      </ol>
+    </div>
+    <aside class="split__panel reveal">
+      <div class="panel__badge">15 Yıl</div>
+      <p class="panel__quote">“Doğru mülk, listelenen değil; sizin için aranan mülktür.”</p>
+      <p class="panel__by">Berk Şenyüz — Kurucu</p>
+    </aside>
+  </div>
+</section>
+
+<!-- ============ RAKAMLAR ============ -->
+<section class="section section--stats" id="rakamlar">
+  <div class="wrap stats">
+    <div class="stat reveal"><b data-count="480">0</b><span>Tamamlanan Devir</span></div>
+    <div class="stat reveal"><b data-count="1.4" data-suffix=" Mr €">0</b><span>İşlem Hacmi</span></div>
+    <div class="stat reveal"><b data-count="12">0</b><span>Yıllık Portföy Limiti</span></div>
+    <div class="stat reveal"><b data-count="96" data-suffix="%">0</b><span>Tekrar Çalışma Oranı</span></div>
+  </div>
+</section>
+
+<!-- ============ İLETİŞİM ============ -->
+<section class="section" id="iletisim">
+  <div class="wrap contact">
+    <div class="contact__intro reveal">
+      <p class="eyebrow">İletişim</p>
+      <h2 class="title">Özel görüşme talebi</h2>
+      <p class="section__lede">Formu bırakın, 24 saat içinde size uygun mülklerin kısa listesiyle dönelim.</p>
+      <ul class="contact__list">
+        <li><span>Telefon</span><a href="tel:+902121234567">+90 212 123 45 67</a></li>
+        <li><span>E-posta</span><a href="mailto:merhaba@senyuzestate.com">merhaba@senyuzestate.com</a></li>
+        <li><span>Ofis</span><a href="#iletisim">Bebek Mah. Cevdetpaşa Cd. No:12, İstanbul</a></li>
+      </ul>
+    </div>
+
+    <form class="form reveal" id="contactForm" novalidate>
+      <div class="field">
+        <label for="ad">Ad Soyad</label>
+        <input id="ad" name="ad" type="text" autocomplete="name" required placeholder="Adınız" />
+      </div>
+      <div class="field">
+        <label for="eposta">E-posta</label>
+        <input id="eposta" name="eposta" type="email" autocomplete="email" required placeholder="ornek@mail.com" />
+      </div>
+      <div class="field">
+        <label for="ilgi">İlgilendiğiniz Bölge</label>
+        <select id="ilgi" name="ilgi">
+          <option>Bodrum</option><option>Çeşme</option><option>İstanbul</option>
+          <option>Göcek</option><option>Kalkan</option><option>Fark etmez</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="mesaj">Notunuz</label>
+        <textarea id="mesaj" name="mesaj" rows="4" placeholder="Aradığınız mülkü birkaç cümleyle anlatın."></textarea>
+      </div>
+      <button class="btn btn--solid btn--full" type="submit">Talebi Gönder</button>
+      <p class="form__status" id="formStatus" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <div class="wrap footer__inner">
+    <span class="brand__text">ŞENYÜZ<em>ESTATE</em></span>
+    <p>© <span id="yil">2026</span> Şenyüz Estate. Tüm hakları saklıdır.</p>
+  </div>
+</footer>
+
+<script src="assets/js/main.js" defer></script>
+</body>
+</html>
