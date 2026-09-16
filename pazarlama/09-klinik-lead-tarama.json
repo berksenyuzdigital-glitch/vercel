@@ -1,0 +1,504 @@
+{
+  "name": "Pazarlama 09 - Klinik Lead Tarama",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [
+        -1088,
+        -160
+      ],
+      "id": "69233d2f-dea6-49a6-9a03-77c386def887",
+      "name": "When clicking ‘Execute workflow’"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "c4b6e049-10ff-44e0-ba9e-a7e9a90b9299",
+              "name": "search_query",
+              "value": "diş kliniği Kadıköy İstanbul",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -896,
+        -160
+      ],
+      "id": "1730924b-221d-4035-8281-11597bf9d60d",
+      "name": "Edit Fields"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://overpass-api.de/api/interpreter",
+        "sendBody": true,
+        "contentType": "form-urlencoded",
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "data",
+              "value": "[out:json][timeout:300]; area[\"name\"=\"İstanbul\"][\"boundary\"=\"administrative\"][\"admin_level\"=\"4\"]->.il; (   nwr[\"amenity\"=\"dentist\"](area.il);   nwr[\"healthcare\"=\"dentist\"](area.il); ); out center;"
+            }
+          ]
+        },
+        "options": {
+          "response": {
+            "response": {
+              "responseFormat": "json"
+            }
+          },
+          "timeout": 300000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        -640,
+        -240
+      ],
+      "id": "ce2ae297-fbf5-433c-b5ca-4bb7f46a81b4",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "elements",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        -432,
+        -240
+      ],
+      "id": "5c6cf1b7-40ee-403b-a77a-f776ac5b831e",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "557b03e0-ac17-4e7e-8be8-9f5650f74a50",
+              "name": "business_name",
+              "value": "={{$json.tags?.name || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "4fe85995-4c72-4869-b8d1-5ba5670ce7b3",
+              "name": "website",
+              "value": "={{$json.tags?.website || $json.tags?.['contact:website'] || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "9e14355b-c052-4f32-a35f-0e6aba74d55b",
+              "name": "phone",
+              "value": "={{$json.tags?.phone || $json.tags?.['contact:phone'] || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "f7f00683-ccde-43f3-8217-6998ae0a34ef",
+              "name": "email",
+              "value": "={{$json.tags?.email || $json.tags?.['contact:email'] || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "66039d57-012a-4ee3-99f3-3036e1bea94d",
+              "name": "latitude",
+              "value": "={{$json.lat || $json.center?.lat || ''}}",
+              "type": "string"
+            },
+            {
+              "id": "7f072199-38f7-4993-8072-12aea1b71516",
+              "name": "longitude",
+              "value": "={{$json.lon || $json.center?.lon || ''}}",
+              "type": "string"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.5,
+      "position": [
+        -224,
+        -240
+      ],
+      "id": "0dfbc599-891a-42d4-ba17-1fd7ca515b91",
+      "name": "Edit Fields1"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "dacf89cf-a109-4504-82bc-c1b10f91c61d",
+              "leftValue": "={{$json.email}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        80,
+        -400
+      ],
+      "id": "774a2cda-0144-4a2e-9cc1-843080c0a6db",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "e3535615-3b96-4c99-965a-388d6c16e4da",
+              "leftValue": "={{$json.website}}",
+              "rightValue": "",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        48,
+        -144
+      ],
+      "id": "37d19deb-d043-4aa4-89ae-b572fba3907f",
+      "name": "If1"
+    },
+    {
+      "parameters": {
+        "url": "={{$json.website}}",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "User-Agent",
+              "value": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36"
+            }
+          ]
+        },
+        "options": {
+          "allowUnauthorizedCerts": true,
+          "response": {
+            "response": {
+              "neverError": true,
+              "responseFormat": "text"
+            }
+          },
+          "timeout": 20000
+        }
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.5,
+      "position": [
+        368,
+        -448
+      ],
+      "id": "98dae3ae-0005-434e-aa97-29e625dda508",
+      "name": "HTTP Request1",
+      "retryOnFail": true,
+      "maxTries": 3,
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "let ham = {};\ntry { ham = $('Split Out').item.json ?? {}; } catch (e) { ham = {}; }\nconst tags = ham.tags ?? {};\n\nlet src = {};\ntry { src = $('Edit Fields1').item.json ?? {}; } catch (e) { src = {}; }\n\nconst osm_id = (ham.type && ham.id)\n  ? `${ham.type}/${ham.id}`\n  : `${src.latitude ?? ''},${src.longitude ?? ''}`;\n\nconst website = src.website || tags.website || tags['contact:website'] || '';\nconst h = String(website).match(/https?:\\/\\/([^\\/]+)/);\nconst host = h ? h[1].replace(/^www\\./, '').toLowerCase() : '';\n\nconst business_name = src.business_name || tags.name || host || '';\nconst html = String($json.data ?? '');\n\n// ---------- TELEFON ----------\nconst normTel = (t) => {\n  let x = String(t).replace(/[^\\d+]/g, '').replace(/^\\+/, '');\n  if (x.startsWith('0090')) x = x.slice(2);\n  if (x.startsWith('90') && x.length === 12) return x;\n  if (x.startsWith('0') && x.length === 11) return '90' + x.slice(1);\n  if (x.length === 10 && /^[25]/.test(x)) return '90' + x;\n  return '';\n};\n\nconst adaylar = [];\n// 1) OSM etiketleri (varsa en güvenilir)\nfor (const k of ['contact:phone', 'phone', 'contact:mobile', 'phone:mobile']) {\n  if (tags[k]) adaylar.push(...String(tags[k]).split(';'));\n}\n// 2) Sitedeki tel: linkleri\nfor (const m of html.matchAll(/tel:([+\\d\\s\\-\\(\\).]{7,25})/gi)) adaylar.push(m[1]);\n// 3) Sitedeki düz metin numaralar\nfor (const m of html.matchAll(/(?:\\+?90[\\s\\-.]?)?0?[\\s\\-.]?\\(?\\s?(?:2\\d{2}|5\\d{2})\\s?\\)?[\\s\\-.]?\\d{3}[\\s\\-.]?\\d{2}[\\s\\-.]?\\d{2}/g)) {\n  adaylar.push(m[0]);\n}\n\nconst telefonlar = [...new Set(adaylar.map(normTel).filter(Boolean))];\nconst phone = telefonlar[0] || '';\n\n// ---------- E-POSTA ----------\nconst coz = (s) => { try { return decodeURIComponent(s); } catch (e) { return s; } };\nconst cop = /(sentry|wixpress|example|godaddy|yourdomain|domain\\.com|\\.wix|sitem\\.com|^ornek@|^test@|noreply|no-reply|\\.(png|jpe?g|gif|svg|webp|css|js)$)/i;\nconst rehber = /(zoon\\.|nicelocal|yelp|foursquare|facebook|instagram|sentry)/i;\n\nconst bulunan = [...new Set(\n  (html.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}/g) || [])\n    .map(e => coz(e).toLowerCase().trim())\n    .map(e => e.replace(/^[^a-z0-9]+/, ''))\n)].filter(e => !cop.test(e) && !rehber.test(e));\n\nconst kendi = host ? bulunan.filter(e => e.endsWith('@' + host)) : [];\nconst email = kendi[0] || bulunan[0] || '';\nconst rehberSite = rehber.test(String(website));\n\nreturn {\n  json: {\n    osm_id,\n    business_name,\n    website,\n    phone,\n    email: rehberSite ? '' : email,\n    tum_emailler: bulunan.join(', '),\n    tum_telefonlar: telefonlar.join(', '),\n    durum: rehberSite ? 'rehber_sitesi' : (email ? 'eposta_var' : 'eposta_yok'),\n    latitude: src.latitude ?? ham.lat ?? ham.center?.lat ?? '',\n    longitude: src.longitude ?? ham.lon ?? ham.center?.lon ?? '',\n    hata: $json.error ? String($json.error.message || '') : '',\n  },\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        480,
+        -240
+      ],
+      "id": "756cafb9-d6e6-41da-aa3a-ccaf8f56a268",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "appendOrUpdate",
+        "documentId": {
+          "__rl": true,
+          "value": "BURAYA_SHEET_ID",
+          "mode": "id"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "gid=0",
+          "mode": "list",
+          "cachedResultName": "Sayfa1"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {
+            "Klinik": "={{ $json.business_name }}",
+            "OSM_ID": "={{ $json.osm_id }}",
+            "Sehir": "İstanbul",
+            "Telefon": "={{ $json.phone }}",
+            "Website": "={{ $json.website }}",
+            "Email": "={{ $json.email }}",
+            "Durum": "={{ $json.durum }}",
+            "Tarih": "={{ $now.format('yyyy-MM-dd') }}"
+          },
+          "matchingColumns": [
+            "OSM_ID"
+          ],
+          "schema": [
+            {
+              "id": "OSM_ID",
+              "displayName": "OSM_ID",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true,
+              "removed": false
+            },
+            {
+              "id": "Klinik",
+              "displayName": "Klinik",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Sehir",
+              "displayName": "Sehir",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Telefon",
+              "displayName": "Telefon",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Website",
+              "displayName": "Website",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Email",
+              "displayName": "Email",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Durum",
+              "displayName": "Durum",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            },
+            {
+              "id": "Tarih",
+              "displayName": "Tarih",
+              "required": false,
+              "defaultMatch": false,
+              "display": true,
+              "type": "string",
+              "canBeUsedToMatch": true
+            }
+          ],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        688,
+        -240
+      ],
+      "id": "750c237e-e0bb-4233-a035-ac1d8f81bfc5",
+      "name": "Append or update row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "name": "Google Sheets account 3"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking ‘Execute workflow’": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "Edit Fields1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Edit Fields1": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "If1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ],
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Append or update row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate"
+  },
+  "meta": {
+    "templateCredsSetupCompleted": true
+  },
+  "nodeGroups": [],
+  "tags": []
+}
