@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { kacakRaporu, ciro, TL, sayi, tarihTR, saatTR } from "@/lib/hesap";
-import { Baslik, Kpi, Bolum, Bos, Yukleniyor } from "@/components/Ui";
+import { Baslik, Olculer, Bolum, Bos, Yukleniyor, Segman } from "@/components/Ui";
 
 const ARALIKLAR = [
   { g: 7, ad: "Son 7 gün" },
@@ -46,29 +46,22 @@ export default function Kacak() {
         ust="Gelir kaçağı"
         ana="Faturaya yansımayan kullanım"
         alt="Hastaya uygulandı, stoktan düştü, ama ücretlendirilmedi. Kliniklerin en yaygın ve en görünmez gelir kaybı."
-        sag={
-          <div className="flex gap-1.5">
-            {ARALIKLAR.map((a) => (
-              <button key={a.g} onClick={() => setGun(a.g)} className="rozet"
-                      style={a.g === gun ? { background: "var(--accent)", color: "#fff" }
-                                         : { background: "var(--surface-2)", color: "var(--ink-2)" }}>
-                {a.ad}
-              </button>
-            ))}
-          </div>
-        }
+        sag={<Segman secili={gun} sec={setGun}
+                     secenekler={ARALIKLAR.map((a) => ({ deger: a.g, ad: a.ad }))} />}
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Kpi etiket="Toplam kaçak" deger={TL(toplam)} tip="kritik" ikon="🩸"
-             alt={`${satirlar.length} kalem · ${gun} gün`} />
-        <Kpi etiket="Cirodaki payı" deger={`%${oran.toFixed(1)}`} tip="kritik" ikon="📉"
-             alt={`Ücretlendirilen ciro: ${TL(gelir)}`} />
-        <Kpi etiket="Yıllık karşılığı" deger={TL((toplam / gun) * 365)} tip="kritik" ikon="📅"
-             alt="Bu hız devam ederse" />
-        <Kpi etiket="En çok kaçan kalem" deger={kirilim[0] ? TL(kirilim[0].tutar) : "—"} ikon="🔎"
-             alt={kirilim[0]?.ad ?? ""} />
-      </div>
+      <Olculer
+        ogeler={[
+          { etiket: "Toplam kaçak", deger: TL(toplam), tip: "kritik",
+            not: `${satirlar.length} kalem · son ${gun} gün` },
+          { etiket: "Cirodaki payı", deger: `%${oran.toFixed(1)}`, tip: "kritik",
+            not: `Ücretlendirilen ciro ${TL(gelir)}` },
+          { etiket: "Yıllık karşılığı", deger: TL((toplam / gun) * 365), tip: "kritik",
+            not: "Bu hız devam ederse" },
+          { etiket: "En çok kaçan kalem", deger: kirilim[0] ? TL(kirilim[0].tutar) : "—",
+            not: kirilim[0]?.ad ?? "" },
+        ]}
+      />
 
       <div className="grid lg:grid-cols-[1fr_360px] gap-5 items-start">
         <Bolum baslik="Kalem kalem" aciklama="Her satır bir işleme ve bir hastaya bağlıdır">
@@ -77,26 +70,29 @@ export default function Kacak() {
               <table className="w-full tablo">
                 <thead className="sticky top-0" style={{ background: "var(--surface)" }}>
                   <tr>
-                    <th>Tarih</th><th>İşlem</th><th>Hasta / Sahip</th>
-                    <th>Kullanılan</th><th className="text-right">Adet</th>
-                    <th className="text-right">Tutar</th><th>Personel</th>
+                    <th>Tarih</th><th>Hasta / Sahip</th>
+                    <th>Kullanılan</th><th className="sag">Adet</th>
+                    <th className="sag">Tutar</th>
                   </tr>
                 </thead>
                 <tbody>
                   {satirlar.map((s, i) => (
                     <tr key={s.islemId + i}>
-                      <td className="num text-[12.5px] whitespace-nowrap">
-                        {tarihTR(s.tarih)}<span className="text-ink-muted"> · {saatTR(s.tarih)}</span>
+                      <td className="whitespace-nowrap align-top">
+                        <div className="num">{tarihTR(s.tarih)} · {saatTR(s.tarih)}</div>
+                        <div className="text-[11.5px] text-ink-muted mt-0.5">
+                          {TIP_AD[s.tip] ?? s.tip} · {s.personel}
+                        </div>
                       </td>
-                      <td><span className="rozet rozet-notr">{TIP_AD[s.tip] ?? s.tip}</span></td>
-                      <td>
-                        <div className="font-medium text-[13.5px]">{s.hasta}</div>
-                        <div className="text-[12px] text-ink-muted">{s.sahip}</div>
+                      <td className="align-top">
+                        <div className="font-medium whitespace-nowrap">{s.hasta}</div>
+                        <div className="text-[11.5px] text-ink-muted whitespace-nowrap">{s.sahip}</div>
                       </td>
-                      <td className="text-[13.5px]">{s.aciklama}</td>
-                      <td className="text-right num">{sayi(s.miktar)}</td>
-                      <td className="text-right num font-semibold" style={{ color: "var(--critical)" }}>{TL(s.tutar)}</td>
-                      <td className="text-[12.5px] text-ink-2 whitespace-nowrap">{s.personel}</td>
+                      <td className="align-top min-w-[180px]">{s.aciklama}</td>
+                      <td className="sag num align-top">{sayi(s.miktar)}</td>
+                      <td className="sag rakam font-semibold align-top" style={{ color: "var(--critical)" }}>
+                        {TL(s.tutar)}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -126,12 +122,12 @@ export default function Kacak() {
 
           <Bolum baslik="Personel bazında">
             <table className="w-full tablo">
-              <thead><tr><th>Personel</th><th className="text-right">Tutar</th></tr></thead>
+              <thead><tr><th>Personel</th><th className="sag">Tutar</th></tr></thead>
               <tbody>
                 {[...personelBazli.entries()].sort((a, b) => b[1] - a[1]).map(([p, t]) => (
                   <tr key={p}>
                     <td className="text-[13.5px]">{p}</td>
-                    <td className="text-right num font-medium">{TL(t)}</td>
+                    <td className="sag num font-medium">{TL(t)}</td>
                   </tr>
                 ))}
               </tbody>

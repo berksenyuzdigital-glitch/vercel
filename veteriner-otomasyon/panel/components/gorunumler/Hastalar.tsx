@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { TL, sayi, tarihTR, saatTR } from "@/lib/hesap";
 import { PROTOKOLLER } from "@/lib/veri";
-import { Baslik, Bolum, Bos, Yukleniyor, KiloGrafik } from "@/components/Ui";
+import { Baslik, Bolum, Bos, Yukleniyor, KiloGrafik, Mono } from "@/components/Ui";
 
 const TIP_AD: Record<string, string> = {
   muayene: "Muayene", asi: "Aşı", kuafor: "Kuaför",
@@ -54,7 +54,7 @@ export default function Hastalar() {
               alt="Hayvan profili, kilo/diyet takibi, işlem geçmişi ve koruyucu hekimlik durumu tek kartta." />
 
       <div className="grid lg:grid-cols-[280px_1fr] gap-5 items-start">
-        <div className="kart overflow-hidden lg:sticky lg:top-6">
+        <div className="panel overflow-hidden lg:sticky lg:top-6">
           <div className="p-3 border-b border-line">
             <input className="girdi" placeholder="Hasta veya sahip ara…"
                    value={ara} onChange={(e) => setAra(e.target.value)} />
@@ -64,9 +64,7 @@ export default function Hastalar() {
               <button key={h.id} onClick={() => setSecili(h.id)}
                       className="w-full text-left px-4 py-2.5 border-b border-line flex items-center gap-2.5"
                       style={h.id === aktif ? { background: "var(--accent-soft)" } : undefined}>
-                <span className="text-[16px]" aria-hidden>
-                  {h.tur === "kedi" ? "🐈" : h.tur === "kopek" ? "🐕" : "🐾"}
-                </span>
+                <Mono ad={h.ad} tur={h.tur} boyut={28} />
                 <span className="min-w-0">
                   <span className="block text-[13.5px] font-medium truncate"
                         style={h.id === aktif ? { color: "var(--accent-ink)" } : undefined}>{h.ad}</span>
@@ -79,17 +77,14 @@ export default function Hastalar() {
 
         <div className="space-y-5 min-w-0">
           {/* Profil */}
-          <div className="kart p-5">
+          <div className="panel p-5">
             <div className="flex flex-wrap items-start gap-5">
-              <div className="size-[72px] rounded-[14px] grid place-items-center text-[34px] shrink-0"
-                   style={{ background: "var(--surface-2)" }} aria-hidden>
-                {hasta.tur === "kedi" ? "🐈" : hasta.tur === "kopek" ? "🐕" : "🐾"}
-              </div>
+              <Mono ad={hasta.ad} tur={hasta.tur} boyut={64} />
               <div className="flex-1 min-w-[240px]">
                 <div className="flex items-center gap-2.5 flex-wrap">
                   <h2 className="text-[22px] font-semibold">{hasta.ad}</h2>
-                  <span className="rozet rozet-notr">{hasta.cinsiyet === "disi" ? "♀ Dişi" : "♂ Erkek"}</span>
-                  {hasta.kisir && <span className="rozet rozet-iyi">Kısır</span>}
+                  <span className="etiket-kutu">{hasta.cinsiyet === "disi" ? "♀ Dişi" : "♂ Erkek"}</span>
+                  {hasta.kisir && <span className="durum durum-iyi">Kısır</span>}
                 </div>
                 <p className="text-[13.5px] text-ink-2 mt-1">
                   {hasta.irk} · {yasHesap(hasta.dogumTarihi)} · {sahip.ad} ({sahip.telefon})
@@ -98,10 +93,10 @@ export default function Hastalar() {
                   <p className="text-[12px] text-ink-muted mt-1 num">Mikroçip: {hasta.mikrocip}</p>
                 )}
                 {hasta.kronikNot && (
-                  <div className="rozet rozet-uyari mt-2.5">⚕ {hasta.kronikNot}</div>
+                  <div className="durum durum-uyari mt-3">{hasta.kronikNot}</div>
                 )}
               </div>
-              <div className="text-right">
+              <div className="sag">
                 <div className="text-[12px] text-ink-2 mb-1">Yaşam boyu değer</div>
                 <div className="text-[24px] font-semibold num">{TL(toplamHarcama)}</div>
                 <div className="text-[12px] text-ink-muted mt-0.5">{islemler.length} işlem</div>
@@ -112,8 +107,8 @@ export default function Hastalar() {
               <div className="mt-4 pt-4 border-t border-line flex items-center gap-2 flex-wrap">
                 <span className="text-[12.5px] text-ink-muted">Aynı sahibin diğer hayvanları:</span>
                 {kardesler.filter((k) => k.id !== hasta.id).map((k) => (
-                  <button key={k.id} onClick={() => setSecili(k.id)} className="rozet rozet-notr cursor-pointer">
-                    {k.tur === "kedi" ? "🐈" : "🐕"} {k.ad}
+                  <button key={k.id} onClick={() => setSecili(k.id)} className="cip !py-1 !px-2.5">
+                    {k.ad}
                   </button>
                 ))}
               </div>
@@ -126,8 +121,8 @@ export default function Hastalar() {
             aciklama={sonKilo ? `Son ölçüm ${tarihTR(sonKilo.tarih)} · ${sonKilo.kiloKg} kg` : undefined}
             sag={
               olcumler.length > 1 ? (
-                <span className={`rozet ${Math.abs(degisim) < 0.3 ? "rozet-iyi" : degisim > 0 ? "rozet-uyari" : "rozet-iyi"}`}>
-                  {degisim > 0 ? "▲" : "▼"} {Math.abs(degisim).toFixed(1)} kg
+                <span className={`durum durum-sade ${Math.abs(degisim) < 0.3 ? "durum-notr" : degisim > 0 ? "durum-uyari" : "durum-iyi"}`}>
+                  {degisim > 0 ? "↑" : "↓"} {Math.abs(degisim).toFixed(1)} kg
                 </span>
               ) : undefined
             }>
@@ -146,7 +141,7 @@ export default function Hastalar() {
           {/* Koruyucu hekimlik */}
           <Bolum baslik="Koruyucu hekimlik">
             <table className="w-full tablo">
-              <thead><tr><th>Uygulama</th><th>Son</th><th>Sonraki</th><th className="text-right">Durum</th></tr></thead>
+              <thead><tr><th>Uygulama</th><th>Son</th><th>Sonraki</th><th className="sag">Durum</th></tr></thead>
               <tbody>
                 {uygulamalar.map((u) => {
                   const p = protokolIdx.get(u.protokolId);
@@ -154,10 +149,10 @@ export default function Hastalar() {
                   return (
                     <tr key={u.id}>
                       <td className="font-medium text-[13.5px]">{p?.ad}</td>
-                      <td className="num text-[12.5px] text-ink-muted">{u.uygulamaTarihi ?? "—"}</td>
-                      <td className="num text-[12.5px]">{u.sonrakiTarih}</td>
-                      <td className="text-right">
-                        <span className={`rozet ${kalan < 0 ? "rozet-kritik" : kalan <= 14 ? "rozet-uyari" : "rozet-iyi"}`}>
+                      <td className="num text-[12.5px] text-ink-muted">{u.uygulamaTarihi ? tarihTR(u.uygulamaTarihi) : "—"}</td>
+                      <td className="num text-[12.5px]">{tarihTR(u.sonrakiTarih)}</td>
+                      <td className="sag">
+                        <span className={`durum ${kalan < 0 ? "durum-kritik" : kalan <= 14 ? "durum-uyari" : "durum-iyi"}`}>
                           {kalan < 0 ? `${Math.abs(kalan)} gün gecikti` : `${kalan} gün kaldı`}
                         </span>
                       </td>
@@ -179,7 +174,7 @@ export default function Hastalar() {
                     <div key={i.id} className="px-4 py-3 border-b border-line">
                       <div className="flex items-center justify-between gap-3 flex-wrap">
                         <div className="flex items-center gap-2.5">
-                          <span className="rozet rozet-notr">{TIP_AD[i.tip] ?? i.tip}</span>
+                          <span className="etiket-kutu">{TIP_AD[i.tip] ?? i.tip}</span>
                           <span className="text-[13px] num text-ink-2">
                             {tarihTR(i.tarih)} · {saatTR(i.tarih)}
                           </span>

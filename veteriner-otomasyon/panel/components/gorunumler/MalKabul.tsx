@@ -43,9 +43,9 @@ export default function MalKabul() {
               alt="İrsaliyeden giriş. Miat takipli üründe lot ve miat zorunludur — miat raporunun doğruluğu buna bağlı." />
 
       {bildirim && (
-        <div className="kart p-3.5 mb-5 text-[14px] font-medium"
+        <div className="panel p-3.5 mb-5 text-[14px] font-medium"
              style={{ borderColor: "var(--good)", background: "var(--good-wash)", color: "var(--good)" }}>
-          ✓ {bildirim}
+          {bildirim}
         </div>
       )}
 
@@ -117,7 +117,7 @@ export default function MalKabul() {
             <table className="w-full tablo">
               <thead>
                 <tr><th>Tarih</th><th>Ürün</th><th>Lot / Miat</th>
-                    <th className="text-right">Miktar</th><th className="text-right">Maliyet</th></tr>
+                    <th className="sag">Miktar</th><th className="sag">Maliyet</th></tr>
               </thead>
               <tbody>
                 {sonGirisler.map((h) => {
@@ -130,8 +130,8 @@ export default function MalKabul() {
                       <td className="num text-[12.5px] text-ink-muted">
                         {l?.lotNo ?? "—"}{l?.miat ? ` · ${l.miat}` : ""}
                       </td>
-                      <td className="text-right num font-medium">+{sayi(h.miktar)}</td>
-                      <td className="text-right num">{TL(h.miktar * h.birimFiyat)}</td>
+                      <td className="sag num font-medium">+{sayi(h.miktar)}</td>
+                      <td className="sag num">{TL(h.miktar * h.birimFiyat)}</td>
                     </tr>
                   );
                 })}

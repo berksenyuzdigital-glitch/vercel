@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react";
 import { useStore } from "@/lib/store";
 import { urunToplamlari, TL, sayi } from "@/lib/hesap";
-import { Baslik, Bolum, Yukleniyor } from "@/components/Ui";
+import { Baslik, Bolum, Yukleniyor, Segman, Mono } from "@/components/Ui";
 import type { Kategori } from "@/lib/tipler";
 
 const KATEGORILER: { id: Kategori | "hepsi"; ad: string }[] = [
@@ -80,9 +80,9 @@ export default function HizliCikis() {
       />
 
       {bildirim && (
-        <div className="kart p-3.5 mb-5 text-[14px] font-medium flex items-center gap-2"
+        <div className="panel p-3.5 mb-5 text-[14px] font-medium flex items-center gap-2"
              style={{ borderColor: "var(--good)", background: "var(--good-wash)", color: "var(--good)" }}>
-          ✓ {bildirim}
+          {bildirim}
         </div>
       )}
 
@@ -99,10 +99,7 @@ export default function HizliCikis() {
                 <button key={h.id} onClick={() => setHastaId(h.id)}
                         className="w-full text-left px-4 py-3 border-b border-line flex items-center gap-3 transition-colors"
                         style={aktif ? { background: "var(--accent-soft)" } : undefined}>
-                  <span className="size-9 rounded-full grid place-items-center text-[17px] shrink-0"
-                        style={{ background: "var(--surface-2)" }}>
-                    {h.tur === "kedi" ? "🐈" : h.tur === "kopek" ? "🐕" : "🐾"}
-                  </span>
+                  <Mono ad={h.ad} tur={h.tur} boyut={34} />
                   <span className="min-w-0">
                     <span className="block font-medium text-[14px] truncate"
                           style={aktif ? { color: "var(--accent-ink)" } : undefined}>{h.ad}</span>
@@ -118,16 +115,8 @@ export default function HizliCikis() {
           <div className="p-3 border-b border-line space-y-2.5">
             <input className="girdi" placeholder="Ürün adı veya kodu…"
                    value={urunAra} onChange={(e) => setUrunAra(e.target.value)} />
-            <div className="flex flex-wrap gap-1.5">
-              {KATEGORILER.map((k) => (
-                <button key={k.id} onClick={() => setKategori(k.id)} className="rozet"
-                        style={k.id === kategori
-                          ? { background: "var(--accent)", color: "#fff" }
-                          : { background: "var(--surface-2)", color: "var(--ink-2)" }}>
-                  {k.ad}
-                </button>
-              ))}
-            </div>
+            <Segman secili={kategori} sec={setKategori}
+                    secenekler={KATEGORILER.map((k) => ({ deger: k.id, ad: k.ad }))} />
           </div>
           <div className="max-h-[420px] overflow-y-auto grid grid-cols-2 gap-2 p-3">
             {urunler.map(({ urun, toplam: kalan, kritik }) => (
@@ -146,7 +135,7 @@ export default function HizliCikis() {
           </div>
         </Bolum>
 
-        <div className="kart overflow-hidden lg:sticky lg:top-6">
+        <div className="panel overflow-hidden lg:sticky lg:top-6">
           <div className="px-4 py-3.5 border-b border-line">
             <h2 className="text-[15px] font-semibold">3 · Onay</h2>
             {secili ? (
@@ -182,8 +171,8 @@ export default function HizliCikis() {
                       <button
                         onClick={() => setSepet((x) => x.map((i) => i.urunId === s.urunId
                           ? { ...i, ucretli: !i.ucretli } : i))}
-                        className={`rozet ${s.ucretli ? "rozet-iyi" : "rozet-kritik"} flex-1 !justify-center !py-1.5 cursor-pointer`}>
-                        {s.ucretli ? "✓ Ücretlendir" : "✕ Ücretsiz"}
+                        className={`durum ${s.ucretli ? "durum-iyi" : "durum-kritik"} flex-1 !justify-center !py-1.5 cursor-pointer`}>
+                        {s.ucretli ? "Ücretlendirilecek" : "Ücretsiz"}
                       </button>
                     </div>
                   </div>

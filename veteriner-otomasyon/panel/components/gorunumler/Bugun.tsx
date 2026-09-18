@@ -4,10 +4,10 @@ import { useStore } from "@/lib/store";
 import { useNav } from "@/lib/nav";
 import {
   kritikStok, miatTakibi, kacakRaporu, bugunCiro, ciro, miatZarari,
-  yaklasanUygulamalar, TL, sayi,
+  yaklasanUygulamalar, TL, sayi, tarihTR,
 } from "@/lib/hesap";
 import { PROTOKOLLER } from "@/lib/veri";
-import { Baslik, Kpi, Bolum, Bos, Yukleniyor } from "@/components/Ui";
+import { Baslik, Odak, Olculer, Bolum, Bos, Yukleniyor, Mono } from "@/components/Ui";
 
 export default function Bugun() {
   const { veri } = useStore();
@@ -23,63 +23,72 @@ export default function Bugun() {
   const bugun = bugunCiro(veri);
   const zarar = miatZarari(veri);
   const yaklasan = yaklasanUygulamalar(veri, 21);
-  const kacirilan = yaklasan.filter((u) => u.kalan < 0);
   const oran = aylikCiro > 0 ? (kacakTutar / (aylikCiro + kacakTutar)) * 100 : 0;
   const protokolIdx = new Map(PROTOKOLLER.map((p) => [p.id, p.ad]));
 
+  const tarih = new Intl.DateTimeFormat("tr-TR", {
+    weekday: "long", day: "numeric", month: "long",
+  }).format(new Date());
+
   return (
     <>
-      <Baslik
-        ust={new Intl.DateTimeFormat("tr-TR", { weekday: "long", day: "numeric", month: "long", year: "numeric" }).format(new Date())}
-        ana="Bugün"
-        alt="Kliniğin bugün para kaybettiği ve kaybedeceği yerler. Her kart tıklanabilir."
+      <Baslik ust={tarih} ana="Bugün" />
+
+      <Odak
+        etiket="Son 30 günde faturaya yansımayan kullanım"
+        deger={TL(kacakTutar)}
+        tip="kritik"
+        aciklama={
+          <>
+            {kacaklar.length} kalem ilaç ve sarf malzeme hastaya uygulandı, stoktan düştü,
+            ama ücretlendirilmedi. Ayın cirosunun <strong className="text-ink num">%{oran.toFixed(1)}</strong>'i;
+            bu hızda yıllık karşılığı <strong className="text-ink num">{TL((kacakTutar / 30) * 365)}</strong>.
+          </>
+        }
+        eylem={<button onClick={() => git("kacak")} className="btn btn-ana">Kalem kalem incele</button>}
       />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Kpi ikon="🩸" tip="kritik" etiket="Son 30 gün — faturaya yansımayan"
-             deger={TL(kacakTutar)} alt={`${kacaklar.length} kalem · cironun %${oran.toFixed(1)}'i`} />
-        <Kpi ikon="📦" tip={kritikler.length ? "kritik" : "iyi"} etiket="Kritik seviyede ürün"
-             deger={String(kritikler.length)} alt={kritikler[0] ? `En düşük: ${kritikler[0].urun.ad}` : "Tümü yeterli"} />
-        <Kpi ikon="⏳" tip={gecmis.length ? "kritik" : miatlar.length ? "uyari" : "iyi"} etiket="Miadı 60 günde dolacak"
-             deger={String(miatlar.length)} alt={gecmis.length ? `${gecmis.length} lotun miadı GEÇTİ · ${TL(zarar)} zarar` : "Miadı geçen yok"} />
-        <Kpi ikon="💳" etiket="Bugünkü ciro" deger={TL(bugun.tutar)} alt={`${bugun.adet} işlem`} />
-      </div>
+      <Olculer
+        ogeler={[
+          { etiket: "Bugünkü ciro", deger: TL(bugun.tutar), not: `${bugun.adet} işlem` },
+          {
+            etiket: "Kritik stok", deger: String(kritikler.length),
+            tip: kritikler.length ? "kritik" : "iyi",
+            not: kritikler[0] ? `En düşük: ${kritikler[0].urun.ad}` : "Tümü yeterli",
+          },
+          {
+            etiket: "Miadı yaklaşan lot", deger: String(miatlar.length),
+            tip: gecmis.length ? "kritik" : miatlar.length ? "uyari" : "iyi",
+            not: gecmis.length ? `${gecmis.length} lotun miadı geçti` : "Miadı geçen yok",
+          },
+          {
+            etiket: "Miat zararı", deger: TL(zarar),
+            tip: zarar > 0 ? "kritik" : "iyi", not: "Elde kalan, miadı geçmiş stok",
+          },
+        ]}
+      />
 
-      {/* Satışın kalbi: kaçak vurgusu */}
-      <div className="kart p-5 mb-6" style={{ borderColor: "var(--critical)", background: "var(--crit-wash)" }}>
-        <div className="flex flex-wrap items-center justify-between gap-4">
-          <div className="max-w-[62ch]">
-            <div className="text-[13px] font-semibold mb-1.5" style={{ color: "var(--critical)" }}>
-              ⚠︎ Faturaya yansımayan kullanım
-            </div>
-            <p className="text-[14px] text-ink-2 leading-relaxed">
-              Son 30 günde <strong className="text-ink num">{TL(kacakTutar)}</strong> değerinde ilaç ve
-              sarf malzeme hastaya uygulandı ama <strong>ücretlendirilmedi</strong>. Yıllık karşılığı
-              yaklaşık <strong className="text-ink num">{TL(kacakTutar * 12)}</strong>.
-            </p>
-          </div>
-          <button onClick={() => git("kacak")} className="btn btn-ana">Kalem kalem gör →</button>
-        </div>
-      </div>
-
-      <div className="grid lg:grid-cols-2 gap-5">
-        <Bolum baslik="Kritik stok" aciklama="Kritik seviyenin altına düşen ürünler"
-               sag={<button onClick={() => git("stok")} className="text-[13px] font-medium" style={{ color: "var(--accent)" }}>Tüm stok →</button>}>
+      <div className="grid xl:grid-cols-2 gap-5 items-start">
+        <Bolum
+          baslik="Sipariş verilmesi gerekenler"
+          aciklama="Kritik seviyenin altına düşen ürünler"
+          sag={<button onClick={() => git("stok")} className="text-[12.5px] font-medium"
+                       style={{ color: "var(--accent-ink)" }}>Tüm stok</button>}
+        >
           {kritikler.length === 0 ? <Bos mesaj="Kritik seviyede ürün yok." /> : (
-            <table className="w-full tablo">
-              <thead><tr><th>Ürün</th><th className="text-right">Kalan</th><th className="text-right">Kritik</th><th></th></tr></thead>
+            <table className="tablo">
+              <thead><tr><th>Ürün</th><th className="sag">Kalan</th><th className="sag">Kritik eşik</th></tr></thead>
               <tbody>
-                {kritikler.slice(0, 7).map(({ urun, toplam }) => (
+                {kritikler.slice(0, 6).map(({ urun, toplam }) => (
                   <tr key={urun.id}>
                     <td>
                       <div className="font-medium">{urun.ad}</div>
-                      <div className="text-[12px] text-ink-muted num">{urun.kod}</div>
+                      <div className="text-[11.5px] text-ink-muted num mt-0.5">{urun.kod}</div>
                     </td>
-                    <td className="text-right num font-semibold" style={{ color: "var(--critical)" }}>
-                      {sayi(toplam)} <span className="text-ink-muted font-normal">{urun.birim}</span>
+                    <td className="sag num font-semibold" style={{ color: "var(--critical)" }}>
+                      {sayi(toplam)}<span className="text-ink-muted font-normal"> {urun.birim}</span>
                     </td>
-                    <td className="text-right num text-ink-muted">{sayi(urun.kritikSeviye)}</td>
-                    <td className="text-right"><span className="rozet rozet-kritik">sipariş</span></td>
+                    <td className="sag num text-ink-muted">{sayi(urun.kritikSeviye)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -87,23 +96,29 @@ export default function Bugun() {
           )}
         </Bolum>
 
-        <Bolum baslik="Miat takibi" aciklama="Miadı geçen ve 60 gün içinde dolacak lotlar"
-               sag={<button onClick={() => git("miat")} className="text-[13px] font-medium" style={{ color: "var(--accent)" }}>Detay →</button>}>
+        <Bolum
+          baslik="Miat riski"
+          aciklama="Miadı geçen ve 60 gün içinde dolacak lotlar"
+          sag={<button onClick={() => git("miat")} className="text-[12.5px] font-medium"
+                       style={{ color: "var(--accent-ink)" }}>Detay</button>}
+        >
           {miatlar.length === 0 ? <Bos mesaj="Yaklaşan miat yok." /> : (
-            <table className="w-full tablo">
-              <thead><tr><th>Ürün / Lot</th><th className="text-right">Adet</th><th className="text-right">Durum</th></tr></thead>
+            <table className="tablo">
+              <thead><tr><th>Ürün</th><th className="sag">Adet</th><th className="sag">Durum</th></tr></thead>
               <tbody>
-                {miatlar.slice(0, 7).map((m) => {
+                {miatlar.slice(0, 6).map((m) => {
                   const g = m.kalanGun ?? 0;
                   return (
                     <tr key={`${m.urun.id}-${m.lot?.id}`}>
                       <td>
                         <div className="font-medium">{m.urun.ad}</div>
-                        <div className="text-[12px] text-ink-muted num">Lot {m.lot?.lotNo} · {m.lot?.miat}</div>
+                        <div className="text-[11.5px] text-ink-muted num mt-0.5">
+                          Lot {m.lot?.lotNo} · {m.lot?.miat ? tarihTR(m.lot.miat) : "—"}
+                        </div>
                       </td>
-                      <td className="text-right num">{sayi(m.mevcut)}</td>
-                      <td className="text-right">
-                        <span className={`rozet ${g < 0 ? "rozet-kritik" : g <= 30 ? "rozet-uyari" : "rozet-notr"}`}>
+                      <td className="sag num">{sayi(m.mevcut)}</td>
+                      <td className="sag">
+                        <span className={`durum ${g < 0 ? "durum-kritik" : g <= 30 ? "durum-uyari" : "durum-notr"}`}>
                           {g < 0 ? `${Math.abs(g)} gün geçti` : `${g} gün`}
                         </span>
                       </td>
@@ -115,21 +130,30 @@ export default function Bugun() {
           )}
         </Bolum>
 
-        <Bolum baslik="Aşı & parazit takvimi" aciklama="Kaçırılan ve 21 gün içinde gelmesi gerekenler"
-               sag={<button onClick={() => git("takvim")} className="text-[13px] font-medium" style={{ color: "var(--accent)" }}>Takvim →</button>}>
+        <Bolum
+          baslik="Koruyucu hekimlik"
+          aciklama="Kaçırılan ve 21 gün içinde gelmesi gerekenler"
+          sag={<button onClick={() => git("takvim")} className="text-[12.5px] font-medium"
+                       style={{ color: "var(--accent-ink)" }}>Takvim</button>}
+        >
           {yaklasan.length === 0 ? <Bos mesaj="Yaklaşan uygulama yok." /> : (
-            <table className="w-full tablo">
-              <thead><tr><th>Hasta</th><th>Uygulama</th><th className="text-right">Durum</th></tr></thead>
+            <table className="tablo">
+              <thead><tr><th>Hasta</th><th>Uygulama</th><th className="sag">Durum</th></tr></thead>
               <tbody>
-                {yaklasan.slice(0, 7).map((u) => (
+                {yaklasan.slice(0, 6).map((u) => (
                   <tr key={u.id}>
                     <td>
-                      <div className="font-medium">{u.hasta?.ad}</div>
-                      <div className="text-[12px] text-ink-muted">{u.sahip?.ad}</div>
+                      <div className="flex items-center gap-2.5">
+                        <Mono ad={u.hasta?.ad ?? "?"} tur={u.hasta?.tur} boyut={28} />
+                        <div className="min-w-0">
+                          <div className="font-medium truncate">{u.hasta?.ad}</div>
+                          <div className="text-[11.5px] text-ink-muted truncate">{u.sahip?.ad}</div>
+                        </div>
+                      </div>
                     </td>
-                    <td className="text-[13.5px]">{protokolIdx.get(u.protokolId)}</td>
-                    <td className="text-right">
-                      <span className={`rozet ${u.kalan < 0 ? "rozet-kritik" : u.kalan <= 7 ? "rozet-uyari" : "rozet-notr"}`}>
+                    <td>{protokolIdx.get(u.protokolId)}</td>
+                    <td className="sag">
+                      <span className={`durum ${u.kalan < 0 ? "durum-kritik" : u.kalan <= 7 ? "durum-uyari" : "durum-notr"}`}>
                         {u.kalan < 0 ? `${Math.abs(u.kalan)} gün gecikti` : `${u.kalan} gün kaldı`}
                       </span>
                     </td>
@@ -140,26 +164,24 @@ export default function Bugun() {
           )}
         </Bolum>
 
-        <Bolum baslik="Bu ayın özeti">
-          <div className="p-4 grid grid-cols-2 gap-3">
+        <Bolum baslik="Ayın özeti" dolgu>
+          <dl className="divide-y" style={{ borderColor: "var(--line-soft)" }}>
             {[
               ["Ücretlendirilen ciro", TL(aylikCiro), "var(--ink)"],
-              ["Kaçak (ücretlendirilmeyen)", TL(kacakTutar), "var(--critical)"],
+              ["Faturaya yansımayan", TL(kacakTutar), "var(--critical)"],
               ["Miadı geçen stok zararı", TL(zarar), "var(--critical)"],
-              ["Kaçırılan aşı randevusu", `${kacirilan.length} hasta`, "var(--serious)"],
+              ["Kaçırılan aşı randevusu", `${yaklasan.filter((u) => u.kalan < 0).length} hasta`, "var(--warning)"],
             ].map(([e, d, c]) => (
-              <div key={e} className="rounded-[10px] p-3.5" style={{ background: "var(--surface-2)" }}>
-                <div className="text-[12px] text-ink-2 mb-1.5">{e}</div>
-                <div className="text-[18px] font-semibold num" style={{ color: c }}>{d}</div>
+              <div key={e} className="flex items-baseline justify-between gap-4 py-3">
+                <dt className="text-[13.5px] text-ink-2">{e}</dt>
+                <dd className="rakam text-[15px] font-semibold" style={{ color: c }}>{d}</dd>
               </div>
             ))}
-          </div>
-          <div className="px-4 pb-4 -mt-1">
-            <p className="text-[12.5px] text-ink-muted leading-relaxed">
-              Toplam geri kazanılabilir tutar:{" "}
-              <strong className="text-ink num">{TL(kacakTutar + zarar)}</strong> / ay.
-            </p>
-          </div>
+          </dl>
+          <p className="text-[12.5px] text-ink-muted leading-relaxed pt-3.5 mt-1 border-t border-line">
+            Bu ay geri kazanılabilir toplam:{" "}
+            <strong className="text-ink rakam">{TL(kacakTutar + zarar)}</strong>
+          </p>
         </Bolum>
       </div>
     </>

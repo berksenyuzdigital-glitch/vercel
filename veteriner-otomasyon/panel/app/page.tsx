@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import Kenar from "@/components/Kenar";
+import Kenar, { KenarMobil } from "@/components/Kenar";
 import { NavCtx, type Gorunum } from "@/lib/nav";
 import Bugun from "@/components/gorunumler/Bugun";
 import Cikis from "@/components/gorunumler/Cikis";
@@ -36,9 +36,10 @@ export default function Panel() {
 
   return (
     <NavCtx.Provider value={{ aktif, git }}>
-      <div className="flex min-h-screen">
+      <div className="lg:flex min-h-screen">
         <Kenar />
-        <main className="flex-1 min-w-0 px-8 py-7 max-w-[1500px]">
+        <KenarMobil />
+        <main className="flex-1 min-w-0 px-4 sm:px-6 lg:px-8 py-6 lg:py-7 max-w-[1500px]">
           <Ekran />
         </main>
       </div>

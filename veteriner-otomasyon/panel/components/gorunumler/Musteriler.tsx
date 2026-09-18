@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { useStore } from "@/lib/store";
 import { ltv, TL, tarihTR } from "@/lib/hesap";
-import { Baslik, Kpi, Bolum, Bos, Yukleniyor } from "@/components/Ui";
+import { Baslik, Olculer, Bolum, Bos, Yukleniyor } from "@/components/Ui";
 
 export default function Musteriler() {
   const { veri } = useStore();
@@ -23,20 +23,24 @@ export default function Musteriler() {
       <Baslik ust="Cari & müşteri değeri" ana="Yaşam boyu değer (LTV)"
               alt="Bir hasta sahibinin klinikte bıraktığı toplam tutar. Kayıp müşteri, kaybedilen yıllık gelirdir."
               sag={
-                <button onClick={() => setSadeceKayip((v) => !v)} className="rozet cursor-pointer"
+                <button onClick={() => setSadeceKayip((v) => !v)} className="durum cursor-pointer"
                         style={sadeceKayip ? { background: "var(--critical)", color: "#fff" }
                                            : { background: "var(--surface-2)", color: "var(--ink-2)" }}>
                   90+ gündür gelmeyenler
                 </button>
               } />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Kpi etiket="Ortalama LTV" deger={TL(ortalama)} ikon="💎" alt={`${tum.length} kayıtlı sahip`} />
-        <Kpi etiket="90+ gündür gelmeyen" deger={String(kayip.length)} tip={kayip.length ? "kritik" : "iyi"} ikon="👋" />
-        <Kpi etiket="Risk altındaki değer" deger={TL(kayipDeger)} tip="kritik" ikon="📉"
-             alt="Geri kazanılmazsa kaybedilecek" />
-        <Kpi etiket="En değerli müşteri" deger={tum[0] ? TL(tum[0].toplam) : "—"} ikon="🏆" alt={tum[0]?.sahip} />
-      </div>
+      <Olculer
+        ogeler={[
+          { etiket: "Ortalama LTV", deger: TL(ortalama), not: `${tum.length} kayıtlı sahip` },
+          { etiket: "90+ gündür gelmeyen", deger: String(kayip.length),
+            tip: kayip.length ? "kritik" : "iyi", not: "Geri kazanım listesi" },
+          { etiket: "Risk altındaki değer", deger: TL(kayipDeger), tip: "kritik",
+            not: "Geri kazanılmazsa kaybedilecek" },
+          { etiket: "En değerli müşteri", deger: tum[0] ? TL(tum[0].toplam) : "—",
+            not: tum[0]?.sahip ?? "" },
+        ]}
+      />
 
       <Bolum baslik={sadeceKayip ? "Geri kazanım listesi" : "Tüm müşteriler"}
              aciklama={sadeceKayip ? "Tek tıkla hatırlatma gönderilecek hasta sahipleri" : "Toplam harcamaya göre sıralı"}>
@@ -45,9 +49,9 @@ export default function Musteriler() {
             <table className="w-full tablo">
               <thead>
                 <tr>
-                  <th>Sahip</th><th>Telefon</th><th className="text-right">Hayvan</th>
-                  <th className="text-right">İşlem</th><th className="text-right">Toplam (LTV)</th>
-                  <th>Son ziyaret</th><th className="text-right">Durum</th>
+                  <th>Sahip</th><th>Telefon</th><th className="sag">Hayvan</th>
+                  <th className="sag">İşlem</th><th className="sag">Toplam (LTV)</th>
+                  <th>Son ziyaret</th><th className="sag">Durum</th>
                 </tr>
               </thead>
               <tbody>
@@ -55,12 +59,12 @@ export default function Musteriler() {
                   <tr key={x.sahipId}>
                     <td className="font-medium">{x.sahip}</td>
                     <td className="num text-[12.5px] text-ink-2">{x.telefon}</td>
-                    <td className="text-right num">{hastaSayisi.get(x.sahipId) ?? 0}</td>
-                    <td className="text-right num">{x.islemSayisi}</td>
-                    <td className="text-right num font-semibold">{TL(x.toplam)}</td>
+                    <td className="sag num">{hastaSayisi.get(x.sahipId) ?? 0}</td>
+                    <td className="sag num">{x.islemSayisi}</td>
+                    <td className="sag num font-semibold">{TL(x.toplam)}</td>
                     <td className="num text-[12.5px]">{tarihTR(x.sonZiyaret)}</td>
-                    <td className="text-right">
-                      <span className={`rozet ${x.gunOnce > 90 ? "rozet-kritik" : x.gunOnce > 30 ? "rozet-uyari" : "rozet-iyi"}`}>
+                    <td className="sag">
+                      <span className={`durum ${x.gunOnce > 90 ? "durum-kritik" : x.gunOnce > 30 ? "durum-uyari" : "durum-iyi"}`}>
                         {x.gunOnce} gün önce
                       </span>
                     </td>

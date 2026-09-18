@@ -3,7 +3,7 @@
 import { Fragment, useState } from "react";
 import { useStore } from "@/lib/store";
 import { mevcutStok, urunToplamlari, TL, sayi } from "@/lib/hesap";
-import { Baslik, Kpi, Bolum, Bos, Yukleniyor } from "@/components/Ui";
+import { Baslik, Olculer, Bolum, Bos, Yukleniyor, Segman } from "@/components/Ui";
 import type { Kategori } from "@/lib/tipler";
 
 const KAT: { id: Kategori | "hepsi"; ad: string }[] = [
@@ -36,27 +36,23 @@ export default function Stok() {
       <Baslik ust="Envanter" ana="Stok"
               alt="Mevcut miktar hareket defterinin toplamıdır — hiçbir yerde üzerine yazılmaz." />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Kpi etiket="Stok maliyeti (alış)" deger={TL(stokDegeri)} ikon="📦" />
-        <Kpi etiket="Satış değeri" deger={TL(satisDegeri)} ikon="🏷️" />
-        <Kpi etiket="Kritik seviyede" deger={String(kritikAdet)} tip={kritikAdet ? "kritik" : "iyi"} ikon="⚠︎" />
-        <Kpi etiket="Takip edilen kalem" deger={String(tum.length)} ikon="📋" />
-      </div>
+      <Olculer
+        ogeler={[
+          { etiket: "Stok maliyeti", deger: TL(stokDegeri), not: "Alış fiyatı üzerinden" },
+          { etiket: "Satış değeri", deger: TL(satisDegeri), not: "Etiket fiyatı üzerinden" },
+          { etiket: "Kritik seviyede", deger: String(kritikAdet),
+            tip: kritikAdet ? "kritik" : "iyi", not: "Sipariş verilmeli" },
+          { etiket: "Takip edilen kalem", deger: String(tum.length), not: "Ürün kartı" },
+        ]}
+      />
 
       <Bolum baslik="Ürünler" aciklama={`${satirlar.length} kalem listeleniyor`}>
         <div className="p-3 border-b border-line flex flex-wrap gap-2 items-center">
           <input className="girdi max-w-[280px]" placeholder="Ürün ara…"
                  value={ara} onChange={(e) => setAra(e.target.value)} />
-          <div className="flex flex-wrap gap-1.5">
-            {KAT.map((k) => (
-              <button key={k.id} onClick={() => setKat(k.id)} className="rozet"
-                      style={k.id === kat ? { background: "var(--accent)", color: "#fff" }
-                                          : { background: "var(--surface-2)", color: "var(--ink-2)" }}>
-                {k.ad}
-              </button>
-            ))}
-          </div>
-          <button onClick={() => setSadeceKritik((v) => !v)} className="rozet ml-auto"
+          <Segman secili={kat} sec={setKat}
+                  secenekler={KAT.map((k) => ({ deger: k.id, ad: k.ad }))} />
+          <button onClick={() => setSadeceKritik((v) => !v)} className="durum ml-auto"
                   style={sadeceKritik ? { background: "var(--critical)", color: "#fff" }
                                       : { background: "var(--surface-2)", color: "var(--ink-2)" }}>
             Sadece kritik
@@ -69,9 +65,9 @@ export default function Stok() {
               <thead>
                 <tr>
                   <th>Kod</th><th>Ürün</th><th>Kategori</th>
-                  <th className="text-right">Mevcut</th><th className="text-right">Kritik</th>
-                  <th className="text-right">Alış</th><th className="text-right">Satış</th>
-                  <th className="text-right">Değer</th><th></th>
+                  <th className="sag">Mevcut</th><th className="sag">Kritik</th>
+                  <th className="sag">Alış</th><th className="sag">Satış</th>
+                  <th className="sag">Değer</th><th></th>
                 </tr>
               </thead>
               <tbody>
@@ -83,16 +79,16 @@ export default function Stok() {
                       <tr onClick={() => setAcik(acikMi ? null : urun.id)} className="cursor-pointer">
                         <td className="num text-ink-muted text-[12.5px]">{urun.kod}</td>
                         <td className="font-medium">{urun.ad}</td>
-                        <td><span className="rozet rozet-notr">{KAT.find((k) => k.id === urun.kategori)?.ad}</span></td>
-                        <td className="text-right num font-semibold"
+                        <td><span className="etiket-kutu">{KAT.find((k) => k.id === urun.kategori)?.ad}</span></td>
+                        <td className="sag num font-semibold"
                             style={kritik ? { color: "var(--critical)" } : undefined}>
                           {sayi(toplam)} <span className="text-ink-muted font-normal text-[12px]">{urun.birim}</span>
                         </td>
-                        <td className="text-right num text-ink-muted">{sayi(urun.kritikSeviye)}</td>
-                        <td className="text-right num text-ink-2">{TL(urun.alisFiyat)}</td>
-                        <td className="text-right num">{TL(urun.satisFiyat)}</td>
-                        <td className="text-right num font-medium">{TL(toplam * urun.alisFiyat)}</td>
-                        <td className="text-right text-ink-muted text-[12px]">{acikMi ? "▾" : "▸"}</td>
+                        <td className="sag num text-ink-muted">{sayi(urun.kritikSeviye)}</td>
+                        <td className="sag num text-ink-2">{TL(urun.alisFiyat)}</td>
+                        <td className="sag num">{TL(urun.satisFiyat)}</td>
+                        <td className="sag num font-medium">{TL(toplam * urun.alisFiyat)}</td>
+                        <td className="sag text-ink-muted text-[12px]">{acikMi ? "▾" : "▸"}</td>
                       </tr>
                       {acikMi && (
                         <tr>
@@ -108,17 +104,17 @@ export default function Stok() {
                                   {uLot.map((l) => {
                                     const g = l.kalanGun;
                                     return (
-                                      <div key={l.lot?.id} className="kart p-3 flex items-center justify-between gap-3">
+                                      <div key={l.lot?.id} className="panel p-3 flex items-center justify-between gap-3">
                                         <div>
                                           <div className="text-[13px] font-medium num">Lot {l.lot?.lotNo ?? "—"}</div>
                                           <div className="text-[12px] text-ink-muted num">
                                             {l.lot?.miat ? `Miat ${l.lot.miat}` : "Miat takipsiz"}
                                           </div>
                                         </div>
-                                        <div className="text-right">
+                                        <div className="sag">
                                           <div className="text-[14px] font-semibold num">{sayi(l.mevcut)}</div>
                                           {g !== null && (
-                                            <span className={`rozet ${g < 0 ? "rozet-kritik" : g <= 60 ? "rozet-uyari" : "rozet-iyi"} !text-[11px]`}>
+                                            <span className={`durum ${g < 0 ? "durum-kritik" : g <= 60 ? "durum-uyari" : "durum-iyi"} !text-[11px]`}>
                                               {g < 0 ? `${Math.abs(g)} gün geçti` : `${g} gün`}
                                             </span>
                                           )}

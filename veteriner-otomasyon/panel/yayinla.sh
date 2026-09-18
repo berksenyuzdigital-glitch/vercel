@@ -16,7 +16,7 @@ cp -r out yayin/app
 cd yayin/app
 
 mv _next next
-find next -name "_*" -exec bash -c 'mv "$1" "$(dirname "$1")/$(basename "$1" | sed "s/^_//")"' _ {} \;
+find next -depth -name "_*" -exec bash -c 'mv "$1" "$(dirname "$1")/$(basename "$1" | sed "s/^_//")"' _ {} \;
 
 find . -type f \( -name "*.html" -o -name "*.js" -o -name "*.css" -o -name "*.txt" \) -print0 |
   xargs -0 sed -i -e 's|\./_next/|./next/|g' -e 's|_next/|next/|g' \

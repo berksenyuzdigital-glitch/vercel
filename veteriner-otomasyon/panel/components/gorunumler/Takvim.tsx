@@ -2,9 +2,9 @@
 
 import { useState } from "react";
 import { useStore } from "@/lib/store";
-import { yaklasanUygulamalar } from "@/lib/hesap";
+import { yaklasanUygulamalar, tarihTR } from "@/lib/hesap";
 import { PROTOKOLLER } from "@/lib/veri";
-import { Baslik, Kpi, Bolum, Bos, Yukleniyor } from "@/components/Ui";
+import { Baslik, Olculer, Bolum, Bos, Yukleniyor, Segman, Mono } from "@/components/Ui";
 
 export default function Takvim() {
   const { veri } = useStore();
@@ -21,25 +21,20 @@ export default function Takvim() {
     <>
       <Baslik ust="Koruyucu hekimlik" ana="Aşı & parazit takvimi"
               alt="Kliniğin tekrar eden gelirinin tamamı burada. Kaçan her hatırlatma, kaybedilen bir hastadır."
-              sag={
-                <div className="flex gap-1.5">
-                  {[14, 30, 60].map((g) => (
-                    <button key={g} onClick={() => setPencere(g)} className="rozet"
-                            style={g === pencere ? { background: "var(--accent)", color: "#fff" }
-                                                 : { background: "var(--surface-2)", color: "var(--ink-2)" }}>
-                      {g} gün
-                    </button>
-                  ))}
-                </div>
-              } />
+              sag={<Segman secili={pencere} sec={setPencere}
+                           secenekler={[14, 30, 60].map((g) => ({ deger: g, ad: `${g} gün` }))} />} />
 
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 mb-6">
-        <Kpi etiket="Kaçırılan uygulama" deger={String(kacirilan.length)} tip={kacirilan.length ? "kritik" : "iyi"}
-             ikon="🚨" alt="Tarihi geçti, hasta gelmedi" />
-        <Kpi etiket="Bu hafta" deger={String(buHafta.length)} tip="uyari" ikon="📅" />
-        <Kpi etiket={`${pencere} gün içinde`} deger={String(hepsi.filter((u) => u.kalan >= 0).length)} ikon="🗓️" />
-        <Kpi etiket="Takipteki hasta" deger={String(veri.hastalar.length)} ikon="🐾" />
-      </div>
+      <Olculer
+        ogeler={[
+          { etiket: "Kaçırılan uygulama", deger: String(kacirilan.length),
+            tip: kacirilan.length ? "kritik" : "iyi", not: "Tarihi geçti, hasta gelmedi" },
+          { etiket: "Bu hafta", deger: String(buHafta.length), tip: "uyari",
+            not: "7 gün içinde" },
+          { etiket: `${pencere} gün içinde`, deger: String(hepsi.filter((u) => u.kalan >= 0).length),
+            not: "Planlanan uygulama" },
+          { etiket: "Takipteki hasta", deger: String(veri.hastalar.length), not: "Aktif kayıt" },
+        ]}
+      />
 
       <Bolum baslik="Hatırlatma listesi"
              aciklama="n8n bu listeyi okuyup WhatsApp'tan gönderir — panelde manuel de tetiklenebilir">
@@ -49,7 +44,7 @@ export default function Takvim() {
               <thead>
                 <tr>
                   <th>Hasta</th><th>Sahip</th><th>Uygulama</th>
-                  <th>Tarih</th><th className="text-right">Durum</th><th className="text-right">Aksiyon</th>
+                  <th>Tarih</th><th className="sag">Durum</th><th className="sag">Aksiyon</th>
                 </tr>
               </thead>
               <tbody>
@@ -59,11 +54,13 @@ export default function Takvim() {
                   return (
                     <tr key={u.id}>
                       <td>
-                        <div className="font-medium flex items-center gap-1.5">
-                          <span aria-hidden>{u.hasta?.tur === "kedi" ? "🐈" : u.hasta?.tur === "kopek" ? "🐕" : "🐾"}</span>
-                          {u.hasta?.ad}
+                        <div className="flex items-center gap-2.5">
+                          <Mono ad={u.hasta?.ad ?? "?"} tur={u.hasta?.tur} boyut={30} />
+                          <div className="min-w-0">
+                            <div className="font-medium truncate">{u.hasta?.ad}</div>
+                            <div className="text-[11.5px] text-ink-muted truncate">{u.hasta?.irk}</div>
+                          </div>
                         </div>
-                        <div className="text-[12px] text-ink-muted">{u.hasta?.irk}</div>
                       </td>
                       <td>
                         <div className="text-[13.5px]">{u.sahip?.ad}</div>
@@ -73,20 +70,20 @@ export default function Takvim() {
                         {p?.ad}
                         <span className="text-ink-muted text-[12px]"> · {p?.tekrarAy} ayda bir</span>
                       </td>
-                      <td className="num text-[12.5px]">{u.sonrakiTarih}</td>
-                      <td className="text-right">
-                        <span className={`rozet ${g < 0 ? "rozet-kritik" : g <= 7 ? "rozet-uyari" : "rozet-notr"}`}>
+                      <td className="num text-[12.5px] whitespace-nowrap">{tarihTR(u.sonrakiTarih)}</td>
+                      <td className="sag">
+                        <span className={`durum ${g < 0 ? "durum-kritik" : g <= 7 ? "durum-uyari" : "durum-notr"}`}>
                           {g < 0 ? `${Math.abs(g)} gün gecikti` : g === 0 ? "bugün" : `${g} gün kaldı`}
                         </span>
                       </td>
-                      <td className="text-right">
+                      <td className="sag">
                         <button
-                          className="rozet cursor-pointer"
+                          className="durum cursor-pointer"
                           onClick={() => setGonderildi((s) => ({ ...s, [u.id]: true }))}
                           style={gonderildi[u.id]
                             ? { background: "var(--good-wash)", color: "var(--good)" }
                             : { background: "var(--accent)", color: "#fff" }}>
-                          {gonderildi[u.id] ? "✓ gönderildi" : "WhatsApp gönder"}
+                          {gonderildi[u.id] ? "Gönderildi" : "WhatsApp gönder"}
                         </button>
                       </td>
                     </tr>
