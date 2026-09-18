@@ -35,6 +35,7 @@ const GRUPLAR: { baslik?: string; ogeler: Oge[] }[] = [
   {
     baslik: "Raporlar",
     ogeler: [
+      { yol: "rapor", ad: "Aylık denetim", ikon: "M14 2.5H6a2 2 0 0 0-2 2v15a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8.5zM14 2.5v6h6M8 13h8M8 17h5" },
       { yol: "kacak", ad: "Gelir kaçağı", ikon: "M12 2.5v19M17 6.5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" },
       { yol: "musteriler", ad: "Cari & LTV", ikon: "M3 3v18h18M7 15l4-4 3 3 5-6" },
     ],

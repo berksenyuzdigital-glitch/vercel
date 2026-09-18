@@ -159,3 +159,147 @@ export function yaklasanUygulamalar(v: Veri, gun = 30) {
     .filter((u) => u.hasta && u.kalan <= gun)
     .sort((a, b) => a.kalan - b.kalan);
 }
+
+/* ==================================================================
+   AYLIK DENETİM RAPORU
+   Kliniğe her ay gönderilen belgenin tüm sayıları tek yerden üretilir.
+   Bazı ölçüler aya bağlı (kaçak, ciro), bazıları anlık durum
+   (miat riski, kayıp hasta, ölü stok) — raporda ayrı işaretlenir.
+================================================================== */
+
+export type Denetim = {
+  ay: string;                 // YYYY-MM
+  ayAdi: string;
+  ciro: number;
+  islemSayisi: number;
+  kacak: {
+    tutar: number; kalem: number; oran: number;
+    urunler: { ad: string; adet: number; tutar: number }[];
+    personel: { ad: string; tutar: number }[];
+  };
+  miat: { gerceklesen: number; risk: number; lotAdedi: number };
+  koruyucu: { kacirilan: number; tutar: number; yaklasan: number };
+  kayip: { adet: number; deger: number; ortalamaLtv: number };
+  stok: { bagliSermaye: number; oluDeger: number; oluKalem: number };
+  uyum: { oran: number; toplamKalem: number; ucretlendirilen: number };
+  /** Kalem kalem doğrulanabilen, gerçekleşmiş kayıp: kaçak + imha */
+  tespitEdilenKayip: number;
+  /** Varsayıma dayalı, henüz kaybedilmemiş gelir: koruyucu hekimlik + kayıp hasta */
+  firsat: number;
+  /** Koruyucu hekimlik hesabında kullanılan birim bedel — raporda açıkça yazılır */
+  birimAsiBedeli: number;
+};
+
+export const ayAdi = (ay: string) =>
+  new Intl.DateTimeFormat("tr-TR", { month: "long", year: "numeric" })
+    .format(new Date(ay + "-01T12:00:00Z"));
+
+/** Veride işlem bulunan aylar, yeniden eskiye */
+export function mevcutAylar(v: Veri): string[] {
+  const s = new Set<string>();
+  for (const i of v.islemler) if (i.durum !== "iptal") s.add(i.tarih.slice(0, 7));
+  return [...s].sort().reverse();
+}
+
+export function aylikDenetim(v: Veri, ay: string): Denetim {
+  const buAy = (t: string) => t.startsWith(ay);
+  const sahipIdx = new Map(v.sahipler.map((s) => [s.id, s.ad]));
+
+  // --- Ciro, kaçak ve ücretlendirme uyumu ---
+  let ciro = 0, kacakTutar = 0, kacakKalem = 0;
+  let toplamUrunKalem = 0, ucretliUrunKalem = 0, islemSayisi = 0;
+  const urunKir = new Map<string, { ad: string; adet: number; tutar: number }>();
+  const personelKir = new Map<string, number>();
+
+  for (const i of v.islemler) {
+    if (i.durum === "iptal" || !buAy(i.tarih)) continue;
+    islemSayisi++;
+    for (const s of i.satirlar) {
+      const tutar = s.miktar * s.birimFiyat;
+      if (s.urunId) {
+        toplamUrunKalem++;
+        if (s.ucretlendirildi) ucretliUrunKalem++;
+      }
+      if (s.ucretlendirildi) { ciro += tutar; continue; }
+      if (!s.urunId) continue;
+      kacakTutar += tutar; kacakKalem++;
+      const c = urunKir.get(s.aciklama) ?? { ad: s.aciklama, adet: 0, tutar: 0 };
+      c.adet += s.miktar; c.tutar += tutar;
+      urunKir.set(s.aciklama, c);
+      personelKir.set(i.personel, (personelKir.get(i.personel) ?? 0) + tutar);
+    }
+  }
+
+  // --- Miat: anlık durum ---
+  const stokSatirlari = mevcutStok(v);
+  const gecmisLotlar = stokSatirlari.filter((s) => (s.kalanGun ?? 1) < 0 && s.mevcut > 0);
+  const riskLotlar = stokSatirlari.filter(
+    (s) => s.kalanGun !== null && s.kalanGun >= 0 && s.kalanGun <= 60 && s.mevcut > 0);
+
+  // --- Koruyucu hekimlik: kaçırılan uygulamaların parasal karşılığı ---
+  // Ortalama aşı bedeli = aşı ürünlerinin satış ortalaması + uygulama hizmeti
+  const asiUrunleri = v.urunler.filter((u) => u.kategori === "asi" || u.kategori === "parazit");
+  const ortAsiBedeli = asiUrunleri.length
+    ? asiUrunleri.reduce((t, u) => t + u.satisFiyat, 0) / asiUrunleri.length
+    : 0;
+  const uygulamaHizmeti = 250;
+  const simdi = Date.now();
+  let kacirilan = 0, yaklasan = 0;
+  for (const u of v.uygulamalar) {
+    const kalan = Math.round((new Date(u.sonrakiTarih).getTime() - simdi) / 86400000);
+    if (kalan < -14) kacirilan++;
+    else if (kalan <= 30) yaklasan++;
+  }
+
+  // --- Kayıp hasta: anlık durum ---
+  const ltvListesi = ltv(v);
+  const kayipListesi = ltvListesi.filter((x) => x.gunOnce > 90);
+  const ortalamaLtv = ltvListesi.length
+    ? ltvListesi.reduce((t, x) => t + x.toplam, 0) / ltvListesi.length : 0;
+
+  // --- Stok: bağlı sermaye ve ölü stok (90 gündür çıkışı olmayan) ---
+  const sonCikis = new Map<string, number>();
+  for (const h of v.hareketler) {
+    if (h.miktar >= 0) continue;
+    const t = new Date(h.tarih).getTime();
+    if (t > (sonCikis.get(h.urunId) ?? 0)) sonCikis.set(h.urunId, t);
+  }
+  let bagliSermaye = 0, oluDeger = 0, oluKalem = 0;
+  for (const { urun, toplam } of urunToplamlari(v)) {
+    if (toplam <= 0) continue;
+    const deger = toplam * urun.alisFiyat;
+    bagliSermaye += deger;
+    const son = sonCikis.get(urun.id) ?? 0;
+    if ((simdi - son) / 86400000 > 90) { oluDeger += deger; oluKalem++; }
+  }
+
+  const miatGerceklesen = gecmisLotlar.reduce((t, s) => t + s.mevcut * s.urun.alisFiyat, 0);
+  const miatRisk = riskLotlar.reduce((t, s) => t + s.mevcut * s.urun.alisFiyat, 0);
+  const koruyucuTutar = kacirilan * (ortAsiBedeli + uygulamaHizmeti);
+
+  return {
+    ay, ayAdi: ayAdi(ay), ciro, islemSayisi,
+    kacak: {
+      tutar: kacakTutar, kalem: kacakKalem,
+      oran: ciro + kacakTutar > 0 ? (kacakTutar / (ciro + kacakTutar)) * 100 : 0,
+      urunler: [...urunKir.values()].sort((a, b) => b.tutar - a.tutar).slice(0, 5),
+      personel: [...personelKir.entries()].map(([ad, tutar]) => ({ ad, tutar }))
+        .sort((a, b) => b.tutar - a.tutar),
+    },
+    miat: { gerceklesen: miatGerceklesen, risk: miatRisk, lotAdedi: gecmisLotlar.length + riskLotlar.length },
+    koruyucu: { kacirilan, tutar: koruyucuTutar, yaklasan },
+    kayip: {
+      adet: kayipListesi.length,
+      deger: kayipListesi.reduce((t, x) => t + x.toplam, 0),
+      ortalamaLtv,
+    },
+    stok: { bagliSermaye, oluDeger, oluKalem },
+    uyum: {
+      oran: toplamUrunKalem > 0 ? (ucretliUrunKalem / toplamUrunKalem) * 100 : 100,
+      toplamKalem: toplamUrunKalem, ucretlendirilen: ucretliUrunKalem,
+    },
+    tespitEdilenKayip: kacakTutar + miatGerceklesen,
+    firsat: koruyucuTutar,
+    birimAsiBedeli: ortAsiBedeli + uygulamaHizmeti,
+  };
+}

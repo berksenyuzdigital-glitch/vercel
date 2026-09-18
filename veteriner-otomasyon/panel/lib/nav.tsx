@@ -3,7 +3,7 @@
 import { createContext, useContext } from "react";
 
 export const GORUNUMLER = [
-  "bugun", "cikis", "stok", "kacak", "miat", "mal-kabul", "hastalar", "takvim", "musteriler",
+  "bugun", "cikis", "stok", "kacak", "miat", "mal-kabul", "hastalar", "takvim", "musteriler", "rapor",
 ] as const;
 
 export type Gorunum = (typeof GORUNUMLER)[number];

@@ -12,6 +12,7 @@ import MalKabul from "@/components/gorunumler/MalKabul";
 import Hastalar from "@/components/gorunumler/Hastalar";
 import Takvim from "@/components/gorunumler/Takvim";
 import Musteriler from "@/components/gorunumler/Musteriler";
+import Rapor from "@/components/gorunumler/Rapor";
 
 const EKRANLAR: Record<Gorunum, () => React.JSX.Element> = {
   "bugun": Bugun,
@@ -23,6 +24,7 @@ const EKRANLAR: Record<Gorunum, () => React.JSX.Element> = {
   "hastalar": Hastalar,
   "takvim": Takvim,
   "musteriler": Musteriler,
+  "rapor": Rapor,
 };
 
 export default function Panel() {
