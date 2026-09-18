@@ -251,10 +251,14 @@ export function veriUret(bugun = new Date()): Veri {
     "muayene", "muayene", "muayene", "asi", "asi", "kuafor", "perakende", "perakende", "operasyon", "otel",
   ];
 
-  for (let g = 45; g >= 0; g--) {
+  // Son 45 gun yogun, oncesi seyrek: LTV ve kayip musteri raporu anlamli olsun
+  for (let g = 270; g >= 0; g--) {
     const tarih = kaydir(b, -g);
     const haftaSonu = tarih.getUTCDay() === 0;
-    const adet = haftaSonu ? 3 + Math.floor(r() * 3) : 7 + Math.floor(r() * 7);
+    const yakin = g <= 45;
+    const adet = haftaSonu
+      ? (yakin ? 3 + Math.floor(r() * 3) : 1 + Math.floor(r() * 2))
+      : (yakin ? 7 + Math.floor(r() * 7) : 2 + Math.floor(r() * 3));
     for (let k = 0; k < adet; k++) {
       isSayac++;
       const tip = tipDagilim[Math.floor(r() * tipDagilim.length)];
