@@ -77,3 +77,30 @@ psql "$DATABASE_URL" -f db/001_sema.sql
 ```
 
 Sonraki adım: RLS politikaları (`002_rls.sql`) ve demo veri (`003_demo.sql`).
+
+---
+
+## Panel (demo)
+
+`panel/` — Next.js 15 klinik paneli. Faz 1 ekranları çalışır durumda:
+
+| Ekran | Yol | Ne gösteriyor |
+|---|---|---|
+| Bugün | `/` | Kaçak tutarı, kritik stok, miat, günlük ciro |
+| Hızlı çıkış | `/cikis` | Muayenede 2 dokunuşla stok düşümü + ücretlendir/ücretsiz |
+| Stok | `/stok` | Ürün + lot kırılımı, kritik filtresi |
+| Kaçak raporu | `/kacak` | Faturaya yansımayan kullanım — ürün ve personel kırılımı |
+| Miat takibi | `/miat` | Geçen/yaklaşan lotlar, risk ve zarar tutarı |
+| Mal kabul | `/mal-kabul` | İrsaliye girişi, lot + miat |
+| Hastalar | `/hastalar` | Hayvan profili, kilo grafiği, koruyucu hekimlik, geçmiş |
+| Aşı takvimi | `/takvim` | Kaçırılan ve yaklaşan uygulamalar + hatırlatma |
+| Cari & LTV | `/musteriler` | Yaşam boyu değer, kayıp müşteri listesi |
+
+**Demo modu:** veri `lib/veri.ts` içinde deterministik üretilir ve tarayıcıda (localStorage)
+tutulur. Harici veritabanı bağımlılığı yoktur — klinikte internet olmasa da açılır.
+Gerçek kurulumda `lib/store.tsx` Supabase istemcisiyle değiştirilir; `db/001_sema.sql`
+aynı veri modelini Postgres'te karşılar.
+
+```bash
+cd panel && npm install && npm run dev
+```
