@@ -177,8 +177,9 @@ def normalize(raw):
     if active is None:
         active = stop is None or stop >= today
 
-    # "Hala yayinda" diyen ama bitis tarihi gecmis kayitlari duzelt.
-    if stop is not None and stop < today:
+    # Bazi aktorler AKTIF reklama da bitis tarihi olarak "bugun"u yazar.
+    # Bu yuzden yalnizca acikca gecmis (3+ gun) bir bitis tarihi olu sayilir.
+    if stop is not None and (today - stop).days > 3:
         active = False
 
     effective_end = today if active else (stop or today)
