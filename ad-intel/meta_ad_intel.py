@@ -37,6 +37,12 @@ API = "https://api.apify.com/v2"
 # Aktor secenekleri. Fiyatlar Apify Store'dan dogrulanmalidir (--budget zaten korur).
 # ---------------------------------------------------------------------------
 ACTORS = {
+    # Kullanicinin sectigi aktor. Slug yerine aktor ID'si kullaniliyor (daha guvenilir).
+    "facebook-ads-scraper": {
+        "id": "JJghSZmShuco4j9gJ",
+        "usd_per_1k": 1.50,
+        "note": "apify/facebook-ads-scraper — resmi. PAHALI: $2 ile ~1.300 reklam.",
+    },
     "blackfalcondata": {
         "id": "blackfalcondata~facebook-ads-library-scraper",
         "usd_per_1k": 0.05,
@@ -255,6 +261,7 @@ def build_input(actor_key, url, count):
         "count": count,
         "maxItems": count,
         "maxResults": count,
+        "resultsLimit": count,
         "limit": count,
         "scrapePageAds": False,
         "activeStatus": "all",
@@ -402,9 +409,10 @@ def print_report(rows, top=25):
 def main():
     p = argparse.ArgumentParser(description="Meta Reklam Kutuphanesi uygulama-reklami istihbarati")
     p.add_argument("--token", default=os.getenv("APIFY_TOKEN"))
-    p.add_argument("--actor", default="blackfalcondata", choices=list(ACTORS))
+    p.add_argument("--actor", default="facebook-ads-scraper", choices=list(ACTORS))
     p.add_argument("--budget", type=float, default=2.0, help="Sert USD ust siniri")
-    p.add_argument("--per-query", type=int, default=300, help="Sorgu basina cekilecek reklam")
+    p.add_argument("--per-query", type=int, default=0,
+                   help="Sorgu basina reklam. 0 = butceye gore otomatik hesapla")
     p.add_argument("--country", default="US", help="US, TR, GB, DE ...")
     p.add_argument("--status", default="active", choices=["active", "all", "inactive"])
     p.add_argument("--queries", default="niches.json", help="Anahtar kelime JSON dosyasi")
@@ -455,6 +463,30 @@ def main():
     if isinstance(queries, dict):
         queries = [q for group in queries.values() for q in group]
 
+    # --- Otomatik boyutlandirma ---
+    # Pahali bir aktorle 45 sorgu calistirmak, sorgu basina 30 reklam demek olur ki
+    # bu bir reklamvereni yargilamaya yetmez. Butce yetmiyorsa sorgu listesini kis,
+    # derinligi koru. Az sayida saglam sinyal, cok sayida gurultuden iyidir.
+    MIN_DEPTH = 120  # bir reklamvereni degerlendirmek icin sorgu basina gereken minimum
+    per_query = args.per_query
+    if per_query <= 0:
+        affordable = int(args.budget / actor["usd_per_1k"] * 1000)
+        per_query = max(60, min(400, affordable // max(len(queries), 1)))
+        if per_query < MIN_DEPTH:
+            keep = max(3, affordable // MIN_DEPTH)
+            if keep < len(queries):
+                print(f"UYARI: ${args.budget:.2f} butce / ${actor['usd_per_1k']}-1K fiyatla "
+                      f"toplam ~{affordable} reklam cekilebilir.")
+                print(f"       {len(queries)} sorguya bolununce sorgu basina {per_query} reklam duserdi "
+                      f"— reklamveren degerlendirmek icin cok az.")
+                print(f"       Sorgu listesi ilk {keep} taneye kisiliyor, derinlik {MIN_DEPTH} yapiliyor.")
+                print(f"       Daha genis tarama isterseniz: --actor blackfalcondata "
+                      f"(~$0.05/1K, ayni parayla ~40.000 reklam)\n")
+                queries = queries[:keep]
+                per_query = MIN_DEPTH
+    print(f"{len(queries)} sorgu x {per_query} reklam  "
+          f"(tahmini ${len(queries) * per_query / 1000 * actor['usd_per_1k']:.2f})\n")
+
     spent = 0.0
     raw_all, seen = [], set()
 
@@ -467,7 +499,7 @@ def main():
         )
         print(f"[{i}/{len(queries)}] '{q}'  (harcanan ${spent:.4f}/{args.budget:.2f})")
         try:
-            items, cost = run_actor(args.token, actor["id"], build_input(args.actor, url, args.per_query))
+            items, cost = run_actor(args.token, actor["id"], build_input(args.actor, url, per_query))
         except Exception as e:                                  # noqa: BLE001
             print(f"    ATLANDI: {e}")
             continue

@@ -37,13 +37,14 @@ Göremiyorsanız, ham kayıttaki tarih alanının adını `meta_ad_intel.py` iç
 `FIELD_MAP["start"]` / `["stop"]` listelerine ekleyin. (Her Apify aktörü farklı
 alan adı kullanıyor, bu yüzden araç birden çok isim deniyor.)
 
-## 2. Adım — Gerçek tarama (~$0.70, tavan $2)
+## 2. Adım — Gerçek tarama (tavan $2)
 
 ```bash
-python3 meta_ad_intel.py --budget 2.0 --per-query 300 --country US
+python3 meta_ad_intel.py --budget 2.0 --country US
 ```
 
-- 45 anahtar kelime × 300 reklam ≈ 13.500 reklam ≈ **$0.68** (@ $0.05/1K)
+- Varsayılan aktör `apify/facebook-ads-scraper` (~$1.50/1K) → ~11 sorgu × 120 reklam ≈ **$1.98**
+- Aynı parayla 20x daha fazla veri için: `--actor blackfalcondata` → 45 sorgu × 400 reklam ≈ **$0.90**
 - `--budget` **sert tavandır**: her çalışma sonrası Apify'ın bildirdiği gerçek
   `usageTotalUsd` toplanır, tavana değince kalan sorgular atlanır.
 - Türkiye pazarı için: `--country TR`
@@ -88,14 +89,30 @@ oyuncu varsa pazar sizin için de yer bırakmış demektir.
 **Kaçınılacak:** `hizli_kapatilan_7g-` yüksek ama `kanitlanmis_30g+` = 0 olan
 nişler. Orada herkes deniyor, kimse tutturamıyor.
 
-## Aktör seçenekleri
+## Aktör seçenekleri ve bütçe
 
 ```bash
-python3 meta_ad_intel.py --actor blackfalcondata   # ~$0.05/1K — varsayılan, en ucuz
-python3 meta_ad_intel.py --actor memo23            # ~$0.75/1K — AB erişim verisi dahil
-python3 meta_ad_intel.py --actor curious_coder     # ~$1.00/1K — geniş alan seti
-python3 meta_ad_intel.py --actor apify             # ~$1.70/1K — resmî aktör
+python3 meta_ad_intel.py --actor facebook-ads-scraper  # ~$1.50/1K — VARSAYILAN (apify/facebook-ads-scraper)
+python3 meta_ad_intel.py --actor blackfalcondata       # ~$0.05/1K — 30x daha ucuz
+python3 meta_ad_intel.py --actor memo23                # ~$0.75/1K — AB erişim verisi dahil
+python3 meta_ad_intel.py --actor curious_coder         # ~$1.00/1K — geniş alan seti
+python3 meta_ad_intel.py --actor apify                 # ~$1.70/1K — sayfa bazlı resmî aktör
 ```
+
+**Fiyat, ne kadar veri göreceğinizi doğrudan belirliyor.** $2 bütçeyle:
+
+| Aktör | Çekilebilen reklam | Gerçekleşen tarama |
+|---|---|---|
+| `facebook-ads-scraper` ($1.50/1K) | ~1.333 | 11 sorgu × 120 reklam |
+| `blackfalcondata` ($0.05/1K) | ~40.000 | 45 sorgu × 400 reklam |
+
+Araç `--per-query` vermezseniz bunu **otomatik hesaplar.** Bütçe sorgu başına
+120 reklamın altına düşecekse, sorgu listesini kısaltıp derinliği korur — çünkü
+bir reklamvereni 30 reklamla yargılayamazsınız. Kısaltma yapıldığında ekrana uyarı basar.
+
+Aktör fiyatlarını çalıştırmadan önce Apify Store sayfasından doğrulayın; bazıları
+sonuç ücretine ek compute unit da yazar. `--budget` gerçek harcamayı okuduğu için
+her durumda sizi korur.
 
 Fiyatları çalıştırmadan önce Apify Store'daki aktör sayfasından doğrulayın;
 bazı aktörler sonuç ücretine ek olarak compute unit da yazar. `--budget`
